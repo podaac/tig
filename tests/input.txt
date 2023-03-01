@@ -1,0 +1,69 @@
+{
+   "cumulus_meta":{
+      "execution_name":"79254339-c7a4-ee08-d380-d72ae87a01fa",
+      "message_source":"sfn",
+      "state_machine":"arn:aws:states:us-west-2:206226843404:stateMachine:MyStateMachine"
+   },
+   "meta":{
+      "buckets":{
+         "internal":{
+            "name":"test-prefix-internal-test",
+            "type":"internal"
+         },
+         "private":{
+            "name":"test-prefix-private-test",
+            "type":"private"
+         },
+         "protected":{
+            "name":"test-prefix-protected-test",
+            "type":"protected"
+         },
+         "public":{
+            "name":"test-prefix-public-test",
+            "type":"public"
+         }
+      },
+      "collection":{
+         "dataType": "JASON-1_L2_OST_GPN_E",
+         "files":[
+            {
+             "bucket": "protected",
+             "regex": "^.*\\.nc$",
+             "type": "data",
+             "sampleFileName": "JA1_GPN_2PeP001_002_20020115_060706_20020115_070316.nc"
+            },
+            {
+             "bucket": "protected",
+             "regex": "^.*\\.png$",
+             "type": "data",
+             "sampleFileName": "JA1_GPN_2PeP001_002_20020115_060706_20020115_070316.png",
+             "s3": "s3://test-prefix-protected/JASON-1_L2_OST_GPN_E/JA1_GPN_2PeP001_014_20020115_112312_20020115_312435.png"
+            }      
+         ],
+         "granuleId": "^JA1_GPN_2PeP([0-9]{3})_([0-9]{3})_([0-9]{8})_([0-9]{6})_([0-9]{8})_([0-9]{6})$",
+         "granuleIdExtraction": "^(JA1_GPN_2PeP([0-9]{3})_([0-9]{3})_([0-9]{8})_([0-9]{6})_([0-9]{8})_([0-9]{6}))((\\.nc)|(\\.cmr\\.json))?$",
+         "name": "JASON-1_L2_OST_GPN_E"
+      }
+   },
+   "payload":{
+      "granules":[
+         {
+            "granuleId":"20141010064000-JPL-L2P_GHRSST-SSTskin-MODIS_T-N-v02.0-fv01.0",
+            "dataType":"MODIS_A-JPL-L2P-v2019.0",
+            "files":[
+               {
+                  "bucket": "test-prefix-protected-test",
+                  "fileName": "test_granule.nc",
+                  "key": "test_folder/test_granule.nc",
+                  "type":"data"
+               }
+            ]
+         }
+      ]
+   },
+  "task_config": {
+    "buckets": "{$.meta.buckets}",
+    "files_config": "{$.meta.collection.files}",
+    "collection": "{$.meta.collection}"
+  }
+}

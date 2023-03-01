@@ -1,0 +1,583 @@
+pipeline {
+    agent none
+    options {
+        preserveStashes(buildCount: 5)
+    }
+    environment{
+        VCS_CREDENTIALS_ID = "github.jpl.nasa.gov_devops_pw"
+        ARTIFACTORY_CREDENTIALS_ID = "jenkins.cae.artifactory"
+        ARTIFACTORY_URL = "https://cae-artifactory.jpl.nasa.gov/artifactory"
+        ARTIFACTORY_DOCKER_REGISTRY = "cae-artifactory.jpl.nasa.gov:16003"
+        SNYK_TOKEN_ID = "snyk_api_key"
+    }
+    stages{
+        stage("Checkout"){
+            agent {
+                docker {
+                    image "${env.ARTIFACTORY_DOCKER_REGISTRY}/podaac/service/build-poetry-1.1.8"
+                    label 'devops1'
+                    args '-v /home/cm/.aws:/home/dockeruser/.aws:ro'
+                    alwaysPull true
+                }
+            }
+            steps{
+                checkout([
+                    $class: 'GitSCM',
+                    branches: scm.branches,
+                    extensions: scm.extensions + [
+                        [$class: 'CleanBeforeCheckout'],
+                        [$class: 'LocalBranch', localBranch: '**'],
+                        [$class: 'PruneStaleBranch']
+                    ],
+                    userRemoteConfigs: scm.userRemoteConfigs
+                ])
+                script{
+                    the_service = sh(returnStdout: true, script: "poetry version | awk '{print \$1}'").trim()
+                    the_version = sh(returnStdout: true, script: "poetry version | awk '{print \$2}'").trim()
+                    the_env = sh(returnStdout: true, script: "printenv").trim()
+                }
+                writeYaml file: 'build-info.yaml', data: ['service_name': the_service, 'source_service_version': the_version, 'build_environment': the_env, 'deploy_env': 'sit', deploy_swot: "false" ], overwrite: true
+                stash name: 'build-info', includes: 'build-info.yaml'
+                echo "Checked out $the_service $the_version"
+            }
+        }
+        stage("Skip Build"){
+            when {
+                anyOf{
+                    changelog '^/version.*'
+                    changelog '^/jenkins skip'
+                }
+            }
+            agent {
+                docker {
+                    image "${env.ARTIFACTORY_DOCKER_REGISTRY}/podaac/service/build-poetry-1.1.8"
+                    label 'devops1'
+                    args '-v /home/cm/.aws:/home/dockeruser/.aws:ro'
+                    alwaysPull true
+                }
+            }
+            steps{
+                script {
+                    currentBuild.result = 'NOT_BUILT'
+                }
+                echo "Build Skipped."
+            }
+        }
+        stage("Run Build"){
+            when {
+                not{
+                    anyOf{
+                        changelog '^/version.*'
+                        changelog '^/jenkins skip'
+                    }
+                }
+            }
+            agent {
+                docker {
+                    image "${env.ARTIFACTORY_DOCKER_REGISTRY}/podaac/service/build-poetry-1.1.8"
+                    label 'devops1'
+                    args '-v /home/cm/.aws:/home/dockeruser/.aws:ro'
+                    alwaysPull true
+                }
+            }
+            stages{
+                stage("Version"){
+                    stages {
+                        stage("Pre Alpha"){
+                            when {
+                                anyOf{
+                                    branch 'feature/*'
+                                    branch 'bugfix/*'
+                                    changeRequest target: 'develop'
+                                }
+                            }
+                            environment {
+                                 GIT_COMMIT_SHORT = sh(script: "printf \$(git rev-parse --short ${GIT_COMMIT})", returnStdout: true).trim()
+                            }
+                            steps{
+                                unstash name: 'build-info'
+                                sh "poetry version \$(poetry version | awk \'{print \$2 \"+${GIT_COMMIT_SHORT}\"}\')"
+                                script{
+                                    build_info = readYaml file: 'build-info.yaml'
+                                    the_version = sh(returnStdout: true, script: "poetry version | awk '{print \$2}'").trim()
+                                    build_info.build_service_version = the_version
+                                    build_info.artifactory_base_path = "general-develop/gov/nasa/podaac"
+                                    build_info.artifactory_docker_registry = "cae-artifactory.jpl.nasa.gov:16001"
+                                    build_info.tva_tf_venue = "ngap-service-sit"
+                                    build_info.cumulus_tf_venue = "ngap-cumulus-sndbx"
+                                }
+                                writeYaml file: 'build-info.yaml', data: build_info, overwrite: true
+                                stash name: 'build-info', includes: 'build-info.yaml'
+                            }
+                        }
+                        stage("Alpha"){
+                            when {
+                                branch 'develop'
+                            }
+                            steps{
+                                unstash name: 'build-info'
+                                sh "poetry version prerelease"
+                                script{
+                                    build_info = readYaml file: 'build-info.yaml'
+                                    the_version = sh(returnStdout: true, script: "poetry version | awk '{print \$2}'").trim()
+                                    build_info.build_service_version = the_version
+                                    build_info.artifactory_base_path = "general-stage/gov/nasa/podaac"
+                                    build_info.artifactory_docker_registry = "cae-artifactory.jpl.nasa.gov:16002"
+                                    build_info.deploy_swot = "true"
+                                    build_info.tva_tf_venue = "ngap-service-sit"
+                                    build_info.cumulus_tf_venue = "ngap-cumulus-sit"
+                                }
+                                writeYaml file: 'build-info.yaml', data: build_info, overwrite: true
+                                stash name: 'build-info', includes: 'build-info.yaml'
+                            }
+                        }
+                        stage("Minor"){
+                            when {
+                                allOf{
+                                    branch 'release/*'
+                                    not{
+                                        changeRequest()
+                                    }
+                                }
+                            }
+                            steps{
+                                dir("temp"){
+                                    withCredentials([usernamePassword(credentialsId: env.VCS_CREDENTIALS_ID, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                                        checkout([
+                                            $class: 'GitSCM',
+                                            branches: [[name: 'develop']],
+                                            extensions: [
+                                                [$class: 'LocalBranch', localBranch: '**']
+                                            ],
+                                            userRemoteConfigs: scm.userRemoteConfigs
+                                        ])
+
+                                        unstash name: 'build-info'
+
+                                        script{
+                                            build_info = readYaml file: 'build-info.yaml'
+                                            cur_ver = build_info['source_service_version']
+                                            string_version = env.BRANCH_NAME.split('/')[-1]
+                                            patch_version = string_version.tokenize('.')[-1]
+                                            sh("echo ${patch_version}")
+
+                                            if(!cur_ver.contains("rc") && patch_version == "0"){
+                                                sh("""
+                                                    poetry version ${env.BRANCH_NAME.split('/')[-1]}
+                                                    poetry version preminor
+                                                """
+                                                )
+                                                dev_version = sh(returnStdout: true, script: "poetry version | awk '{print \$2}'").trim()
+                                                sh("""
+                                                    git config --local user.name "podaac-cloud-dsa"
+                                                    git config --local user.email podaac-cloud-dsa@jpl.nasa.gov
+                                                    git config --local credential.helper "!f() { echo username=\$GIT_USERNAME; echo password=\$GIT_PASSWORD; }; f"
+                                                    git commit -am '/version ${dev_version}'
+                                                    git push origin HEAD:develop
+                                                """)
+                                            }
+                                            else{
+                                                echo("SKIPPING UPDATING DEVELOP VERSION")
+                                            }
+                                        }
+                                    }
+                                    deleteDir()
+                                }
+                            }
+                        }
+                        stage("Release Candidate"){
+                            when {
+                                changeRequest target: 'master'
+                            }
+                            steps{
+                                unstash name: 'build-info'
+                                script{
+                                    build_info = readYaml file: 'build-info.yaml'
+                                    cur_ver = build_info['source_service_version']
+                                    if(cur_ver.contains("rc")){
+                                        sh "poetry version prerelease"
+                                    }else{
+                                        sh "poetry version ${env.CHANGE_BRANCH.split('/')[-1]}-rc.1"
+                                    }
+                                    the_version = sh(returnStdout: true, script: "poetry version | awk '{print \$2}'").trim()
+                                    build_info.build_service_version = the_version
+                                    build_info.artifactory_base_path = "general-stage/gov/nasa/podaac"
+                                    build_info.artifactory_docker_registry = "cae-artifactory.jpl.nasa.gov:16002"
+                                    build_info.deploy_env = 'uat'
+                                    build_info.deploy_swot = "true"
+                                    build_info.tva_tf_venue = "ngap-service-uat"
+                                    build_info.cumulus_tf_venue = "ngap-cumulus-uat"
+                                }
+                                writeYaml file: 'build-info.yaml', data: build_info, overwrite: true
+                                stash name: 'build-info', includes: 'build-info.yaml'
+                            }
+                        }
+                        stage("Release"){
+                            when {
+                                branch 'master'
+                            }
+                            steps{
+                                unstash name: 'build-info'
+                                script{
+                                    build_info = readYaml file: 'build-info.yaml'
+                                    the_version = build_info['source_service_version'].split('-')[0]
+                                    build_info.build_service_version = the_version
+                                    build_info.artifactory_base_path = "general/gov/nasa/podaac"
+                                    build_info.artifactory_docker_registry = "cae-artifactory.jpl.nasa.gov:16003"
+                                    build_info.deploy_swot = "true"
+                                    build_info.deploy_env = 'ops'
+                                    build_info.tva_tf_venue = "ngap-service-ops"
+                                    build_info.cumulus_tf_venue = "ngap-cumulus-ops"
+                                }
+                                sh "poetry version $the_version"
+                                writeYaml file: 'build-info.yaml', data: build_info, overwrite: true
+                                stash name: 'build-info', includes: 'build-info.yaml'
+                            }
+                        }
+                    }
+                }
+                stage("Install"){
+                    // Need to install the project before running tests against it.
+                    steps{
+                        sh 'poetry install'
+                    }
+                }
+                stage("Test"){
+                    stages {
+                        stage("Validate"){
+                            parallel {
+                                stage('PyLint') {
+                                    steps{
+                                        sh "poetry run pylint podaac"
+                                    }
+                                }
+                                stage('Flake8') {
+                                    steps{
+                                        sh "poetry run flake8 podaac"
+                                    }
+                                }
+                                stage('Snyk') {
+                                    steps{
+                                        unstash name: 'build-info'
+                                        withCredentials([string(credentialsId: env.SNYK_TOKEN_ID, variable: 'SNYK_TOKEN')]) {
+                                            sh "snyk monitor --org=po.daac --project-name=podaac/${build_info.service_name}"
+                                        }
+                                    }
+                                }
+                                stage('Test') {
+                                    steps{
+                                        sh 'poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=html -m "not aws and not integration" tests/'
+                                    }
+                                    post {
+                                        always {
+                                            junit 'build/reports/pytest.xml'
+
+                                            publishHTML (target: [
+                                              allowMissing: false,
+                                              alwaysLinkToLastBuild: false,
+                                              keepAll: true,
+                                              reportDir: 'htmlcov',
+                                              reportFiles: 'index.html',
+                                              reportName: "Coverage Report"
+                                            ])
+                                            
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                stage("Build Software"){
+                    steps{
+                        dir('dist'){
+                            deleteDir()
+                        }
+                        sh 'poetry build'
+                    }
+                    post {
+                        success {
+                            archiveArtifacts artifacts: 'dist/*'
+                            stash name: 'artifacts', includes: 'dist/*'
+                        }
+                    }
+                }
+                stage("Publish"){
+                    when {
+                        beforeAgent true
+                        anyOf{
+                            branch 'develop'
+                            branch 'master'
+                            changeRequest()
+                            changelog '/jenkins deploy'
+                        }
+                    }
+                    stages{
+                        stage("Tag Version"){
+                            when {
+                                anyOf{
+                                    branch 'develop'
+                                    branch 'master'
+                                    changeRequest target: 'master'
+                                }
+                            }
+                            environment{
+                                THE_BRANCH = "${(env.CHANGE_BRANCH?:env.BRANCH_NAME)}"
+                            }
+                            steps{
+                                unstash name: 'build-info'
+                                script{
+                                    build_info = readYaml file: 'build-info.yaml'
+                                }
+                                withCredentials([usernamePassword(credentialsId: env.VCS_CREDENTIALS_ID, usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                                    sh("""
+                                        git config --local user.name "podaac-cloud-dsa"
+                                        git config --local user.email podaac-cloud-dsa@jpl.nasa.gov
+                                        git config --local credential.helper "!f() { echo username=\$GIT_USERNAME; echo password=\$GIT_PASSWORD; }; f"
+                                        git commit -am '/version ${build_info.build_service_version}'
+                                    """)
+                                    script{
+                                        if(env.BRANCH_NAME == 'master'){
+                                            sh "git tag -a ${build_info.build_service_version} -m 'Release of v${build_info.build_service_version}'"
+                                        }else{
+                                            sh "git tag ${build_info.build_service_version}"
+                                        }
+                                    }
+                                    sh("""
+                                        git push origin HEAD:${env.THE_BRANCH}
+                                        git push origin ${build_info.build_service_version}
+                                    """)
+                                }
+                            }
+                            post {
+                                failure {
+                                    // If the push fails, delete the local tag so when the build reruns it won't fail because the tag already exists
+                                    sh "git tag -d ${build_info.build_service_version}"
+                                }
+                            }
+                        }
+                        stage("Upload to Artifactory"){
+                            steps{
+                                unstash name: 'artifacts'
+                                sh "poetry config repositories.podaac ${env.ARTIFACTORY_URL}/api/pypi/pypi-release-virtual"
+                                withCredentials([usernamePassword(credentialsId: env.ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]){
+                                    sh "poetry publish -r podaac -u ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}"
+                                }
+                            }
+                        }
+                    }
+                }
+                stage("Build Terraform"){
+                    when {
+                        anyOf{
+                            branch 'develop'
+                            branch 'master'
+                            changeRequest target: 'master'
+                            changeRequest target: 'develop'
+                            changelog '/jenkins deploy'
+                        }
+                    }
+                    environment{
+                        PROJECT_NAME = "cumulus"
+                        PRODUCT = "tig-terraform"
+                        ARTIFACTORY_PATH = "${ARTIFACTORY_URL}/${build_info.artifactory_base_path}"
+                        ARTIFACT_PATH_ZIP = "${ARTIFACTORY_PATH}/${PROJECT_NAME}/${PRODUCT}/${PRODUCT}-${build_info.build_service_version}.zip"
+                    }
+                    steps{
+                        unstash name: 'build-info'
+                        script{
+                            build_info = readYaml file: 'build-info.yaml'
+                        }
+
+                        dir("terraform"){
+                            sh "zip -r ../tig-terraform-${build_info.build_service_version}.zip *"
+                        }
+                        sh "ls -la"
+  
+                        withCredentials([usernamePassword(credentialsId: env.ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]){
+                            sh "curl -u ${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD} -X PUT ${ARTIFACT_PATH_ZIP} -T tig-terraform-${build_info.build_service_version}.zip"
+                        }
+                    }
+                }
+            }
+        }
+        stage("Publish Docker Image"){
+            when {
+                beforeAgent true
+                allOf{
+                    not{
+                        anyOf {
+                            changelog '^/version.*'
+                            changelog '^/jenkins skip'
+                        }
+                    }
+                    anyOf{
+                        branch 'develop'
+                        changeRequest()
+                        branch 'master'
+                        changelog '/jenkins deploy'
+                    }
+                }
+            }
+            agent {
+                label 'dockerce'
+            }
+            stages{
+                stage("Build Image"){
+                    steps{
+                        unstash name: 'build-info'
+                        script{
+                            build_info = readYaml file: 'build-info.yaml'
+                        }
+                        echo "Build image for ${build_info.build_service_version}"
+                        script{
+                            build_info.docker_tag = sh(returnStdout: true, script: "./docker/build-docker.sh -n ${build_info.service_name} -v ${build_info.build_service_version}").trim()
+                            build_info.lambda_docker_tag = sh(returnStdout: true, script: "./docker/build-docker.sh -n ${build_info.service_name} -v ${build_info.build_service_version} --lambda_image").trim()
+                        }
+                        writeYaml file: 'build-info.yaml', data: build_info, overwrite: true
+                        stash name: 'build-info', includes: 'build-info.yaml'
+                    }
+                }
+                stage("Publish to Artifactory"){
+                    steps{
+                        unstash name: 'build-info'
+                        script{
+                            build_info = readYaml file: 'build-info.yaml'
+                        }
+                        echo "Publishing ${build_info.docker_tag} to Artifactory"
+                        withCredentials([usernamePassword(credentialsId: env.ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]){
+                            sh "./docker/push-docker-artifactory.sh -t ${build_info.docker_tag} -r ${build_info.artifactory_docker_registry} -u ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}"
+                            sh "./docker/push-docker-artifactory.sh -t ${build_info.lambda_docker_tag} -r ${build_info.artifactory_docker_registry} -u ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}"
+                        }
+                    }
+                }
+            }
+            post {
+                success {
+                    // If we push to Artifactory, remove the image to save space locally
+                    unstash name: 'build-info'
+                    script{
+                        build_info = readYaml file: 'build-info.yaml'
+                    }
+                    sh("""
+                        docker rmi ${build_info.docker_tag} || true
+                        docker rmi ${build_info.lambda_docker_tag} || true
+                        docker rmi ${build_info.artifactory_docker_registry}/${build_info.docker_tag} || true
+                        docker rmi ${build_info.artifactory_docker_registry}/${build_info.lambda_docker_tag} || true
+                    """)
+                }
+            }
+        }
+        stage("Push to ECR"){
+            when{
+                beforeAgent true
+                allOf{
+                    not{
+                        anyOf {
+                            changelog '^/version.*'
+                            changelog '^/jenkins skip'
+                        }
+                    }
+                    anyOf{
+                        changeRequest target: 'develop'
+                        changeRequest target: 'master'
+                        branch 'develop'
+                        branch 'master'
+                        changelog '/jenkins deploy'
+                    }
+                }
+            }
+            agent {
+                node("devops1")
+            }
+            steps{
+                unstash name: 'build-info'
+                script{
+                    build_info = readYaml file: 'build-info.yaml'
+                }
+                echo "Publishing ${build_info.docker_tag} to ECR"
+                withCredentials([usernamePassword(credentialsId: env.ARTIFACTORY_CREDENTIALS_ID, usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]){
+                    sh("""
+                        docker login --username "${ARTIFACTORY_USER}" --password "${ARTIFACTORY_PASSWORD}" "${build_info.artifactory_docker_registry}"
+                        docker pull ${build_info.artifactory_docker_registry}/${build_info.docker_tag}
+                        docker pull ${build_info.artifactory_docker_registry}/${build_info.lambda_docker_tag}
+                        
+                        docker tag ${build_info.artifactory_docker_registry}/${build_info.docker_tag} ${build_info.docker_tag}
+                        ./docker/push-docker-ecr.sh -v ${build_info.tva_tf_venue} -t ${build_info.docker_tag}
+                        
+                        docker tag ${build_info.artifactory_docker_registry}/${build_info.lambda_docker_tag} ${build_info.lambda_docker_tag}
+                        ./docker/push-docker-ecr.sh -v ${build_info.tva_tf_venue} -t ${build_info.lambda_docker_tag}
+                        ./docker/push-docker-ecr.sh -v ${build_info.cumulus_tf_venue} -t ${build_info.lambda_docker_tag}
+                        if [[ ${build_info.deploy_swot} = "true" ]]
+                        then
+                            ./docker/push-docker-ecr.sh -v ngap-cumulus-swot-${build_info.deploy_env} -t ${build_info.lambda_docker_tag}
+                        fi
+                    """)
+                }
+                
+            }
+            post {
+                success {
+                    // remove docker images after push to AWS
+                    unstash name: 'build-info'
+                    script{
+                        build_info = readYaml file: 'build-info.yaml'
+                    }
+                    sh("""
+                        docker rmi ${build_info.artifactory_docker_registry}/${build_info.docker_tag} || true
+                        docker rmi ${build_info.docker_tag} || true
+                        docker rmi ${build_info.artifactory_docker_registry}/${build_info.lambda_docker_tag} || true
+                        docker rmi ${build_info.lambda_docker_tag} || true
+                    """)
+                }
+            }
+        }
+        stage("Deploy Terraform"){
+            agent {
+                docker {
+                    image "${env.ARTIFACTORY_DOCKER_REGISTRY}/podaac/service/deploy-terraform-0.13.6"
+                    label 'devops1'
+                    alwaysPull true
+                    args '-v $HOME/.netrc:/home/dockeruser/.netrc -v /home/cm/.aws:/home/dockeruser/.aws:ro'
+                }
+            }
+            when{
+                beforeAgent true
+                allOf{
+                    not{
+                        anyOf {
+                            changelog '^/version.*'
+                            changelog '^/jenkins skip'
+                        }
+                    }
+                    anyOf{
+                        branch 'develop'
+                        changeRequest target: 'master'
+                        changelog '/jenkins deploy'
+                    }
+                }
+            }
+            environment{
+                PROJECT_NAME = "cumulus"
+                PRODUCT = "tig-terraform"
+                ARTIFACTORY_PATH = "${ARTIFACTORY_URL}/${build_info.artifactory_base_path}"
+                ARTIFACT_PATH_ZIP = "${ARTIFACTORY_PATH}/${PROJECT_NAME}/${PRODUCT}/${PRODUCT}-${build_info.build_service_version}.zip"
+            }
+            steps{
+                unstash name: 'build-info'
+                unstash name: 'artifacts'
+                script{
+                    build_info = readYaml file: 'build-info.yaml'
+                    the_version = build_info['build_service_version']
+                    environment = build_info['deploy_env']
+                    aws_acct = sh(returnStdout: true, script: "aws sts get-caller-identity --profile ngap-service-${build_info.deploy_env} | python3 -c \"import sys, json; print(json.load(sys.stdin)['Account'])\"").trim()
+                }
+                echo "Deploying ${the_version}"
+                dir("terraform_deploy"){
+                    sh "python3 override.py ${ARTIFACT_PATH_ZIP} ${aws_acct}.dkr.ecr.us-west-2.amazonaws.com/${build_info.lambda_docker_tag}"
+                    sh "bin/deploy.sh -v ${build_info.deploy_env} --app-version ${build_info.build_service_version}"
+                }
+            }
+        }
+    }
+}

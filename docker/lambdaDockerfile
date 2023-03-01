@@ -1,0 +1,54 @@
+ARG FUNCTION_DIR="/function"
+
+FROM python:3.8-slim as build-image
+
+# Include global arg in this stage of the build
+ARG FUNCTION_DIR
+ARG SOURCE
+#ARG TIG_SOURCE
+
+# Install aws-lambda-cpp build dependencies
+RUN apt-get update && \
+  apt-get install -y \
+  g++ \
+  make \
+  cmake \
+  unzip \
+  libcurl4-openssl-dev \
+  wget
+
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+WORKDIR ${FUNCTION_DIR}
+
+# Add artifactory as a trusted pip index
+RUN mkdir $HOME/.pip
+RUN echo "[global]" >> $HOME/.pip/pip.conf && \
+    echo "index-url = https://cae-artifactory.jpl.nasa.gov/artifactory/api/pypi/pypi-release-virtual/simple" >> $HOME/.pip/pip.conf && \
+    echo "trusted-host = cae-artifactory.jpl.nasa.gov maven.earthdata.nasa.gov pypi.org"  >> $HOME/.pip/pip.conf && \
+    echo "extra-index-url = https://pypi.org/simple" >> $HOME/.pip/pip.conf
+
+# Install tig from artifactory
+
+COPY $DIST_PATH $DIST_PATH
+
+# install tig into working directory so we can call lambda
+RUN pip3 install --force --target ${FUNCTION_DIR} $SOURCE
+
+RUN rm -rf $DIST_PATH
+
+# Install the function's dependencies
+RUN pip install \
+    --target ${FUNCTION_DIR} \
+        awslambdaric
+
+# Install cumulus message adapter layer
+# RUN wget https://github.com/nasa/cumulus-message-adapter/releases/download/v1.3.0/cumulus-message-adapter.zip
+# RUN mkdir cumulus-message-adapter
+# RUN unzip -d cumulus-message-adapter cumulus-message-adapter.zip
+
+# ENV CUMULUS_MESSAGE_ADAPTER_DIR=${FUNCTION_DIR}/cumulus-message-adapter
+
+ENTRYPOINT []
+CMD ["podaac.lambda_handler.lambda_handler.handler"]
+

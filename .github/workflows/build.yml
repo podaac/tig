@@ -136,17 +136,17 @@ jobs:
 #           echo "New Application Version: $new_version"
 
 
-#       #########################################################################
-#       # Versioning Summary
-#       #########################################################################
-#       - name: Versioning Summary
-#         run: |
-#           echo "the_service: ${{ env.the_service }}"
-#           echo "the_version: ${{ env.the_version }}"
-#           echo "the_env: ${{ env.the_env }}"
-#           echo "software_version: ${{ env.software_version }}"
-#           echo "GITHUB REF: ${{ github.ref }}"
-#           echo "VENUE: ${{ env.venue }}"
+      #########################################################################
+      # Versioning Summary
+      #########################################################################
+      - name: Versioning Summary
+        run: |
+          echo "the_service: ${{ env.the_service }}"
+          echo "the_version: ${{ env.the_version }}"
+          echo "the_env: ${{ env.the_env }}"
+          echo "software_version: ${{ env.software_version }}"
+          echo "GITHUB REF: ${{ github.ref }}"
+          echo "VENUE: ${{ env.venue }}"
 
 #       #########################################################################
 #       # Test

@@ -151,6 +151,22 @@ jobs:
       # #########################################################################
       # # Test
       # #########################################################################
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_l2ss-py
+            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+            -Dsonar.sources=podaac/
+            -Dsonar.tests=tests/
+            -Dsonar.projectName=l2ss-py
+            -Dsonar.projectVersion=${{ env.software_version }}
+            -Dsonar.python.version=3.8,3.9,3.10
+
       # # First run snyk as a blocking step
       # - name: Run Snyk as a blocking step
       #   uses: snyk/actions/python-3.8@master
@@ -206,54 +222,14 @@ jobs:
           poetry run flake8 podaac \
           poetry run pytest --help \
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=html -m "not aws and not integration" tests/
+      # poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/
+
       ## TODO: Find out where the test report goes
 
       - name: Install Software
         run: |
           poetry build
 
-
-      #     poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/
-
-      # - name: SonarCloud Scan
-      #   uses: sonarsource/sonarcloud-github-action@master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   with:
-      #     args: >
-      #       -Dsonar.organization=${{ github.repository_owner }}
-      #       -Dsonar.projectKey=${{ github.repository_owner }}_l2ss-py
-      #       -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-      #       -Dsonar.sources=podaac/
-      #       -Dsonar.tests=tests/
-      #       -Dsonar.projectName=l2ss-py
-      #       -Dsonar.projectVersion=${{ env.software_version }}
-      #       -Dsonar.python.version=3.8,3.9,3.10
-
-      # # This step will fail the build if snyk fails
-      # - name: Run Snyk as a blocking step
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: test
-      #     args: >
-      #         --org=${{ secrets.SNYK_ORG_ID }}
-      #         --project-name=${{ github.repository }}
-      #         --severity-threshold=high
-      #         --fail-on=all
-
-      # # This step will send the results of snyk to the snyk servers
-      # - name: Run Snyk on Python
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: monitor
-      #     args: >
-      #       --org=${{ secrets.SNYK_ORG_ID }}
-      #       --project-name=${{ github.repository }}
 
       # #########################################################################
       # # Publish new version numbers

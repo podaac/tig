@@ -195,6 +195,7 @@ jobs:
       - name: Install Software
         run: |
           pip install setuptools -U \
+          pip install pylint \
           poetry install
 
       # This is where tests go

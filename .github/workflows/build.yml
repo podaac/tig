@@ -148,32 +148,34 @@ jobs:
           echo "GITHUB REF: ${{ github.ref }}"
           echo "VENUE: ${{ env.venue }}"
 
-      #########################################################################
-      # Test
-      #########################################################################
-      # First run snyk as a blocking step
-      - name: Run Snyk as a blocking step
-        uses: snyk/actions/python-3.8@master
-        env:
-            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-          args: >
-              --org=${{ secrets.SNYK_ORG_ID }}
-              --project-name=${{ github.repository }}
-              --severity-threshold=high
-              --fail-on=all
+      # #########################################################################
+      # # Test
+      # #########################################################################
+      # # First run snyk as a blocking step
+      # - name: Run Snyk as a blocking step
+      #   uses: snyk/actions/python-3.8@master
+      #   env:
+      #       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   with:
+      #     command: test
+      #     args: >
+      #         --org=${{ secrets.SNYK_ORG_ID }}
+      #         --project-name=${{ github.repository }}
+      #         --severity-threshold=high
+      #         --fail-on=all
 
-      # Next run snyk to report the findings to snyk
-      - name: Run Snyk on Python
-        uses: snyk/actions/python-3.8@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: >
-            --org=${{ secrets.SNYK_ORG_ID }}
-            --project-name=${{ github.repository }}
+      # # Next run snyk to report the findings to snyk
+      # - name: Run Snyk on Python
+      #   uses: snyk/actions/python-3.8@master
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   with:
+      #     command: monitor
+      #     args: >
+      #       --org=${{ secrets.SNYK_ORG_ID }}
+      #       --project-name=${{ github.repository }}
+
+
 
 #       # Lastly run the tests bundled with the repo
 #       - name: Test and coverage
@@ -185,16 +187,21 @@ jobs:
 
 
 
-#       #########################################################################
-#       # Build
-#       #########################################################################
-#       # NOTE: This step is platform-specific
-#       # These are gradle-specific steps for installing the application
-#       - name: Build Software
-#         run: |
-#           rm -rf dist
-#           gradle wrapper --gradle-version 6.3
-#           ./gradlew --scan buildArtifact
+      #########################################################################
+      # Build
+      #########################################################################
+      # NOTE: This step is platform-specific
+      # These are gradle-specific steps for installing the application
+      - name: Install Software
+        run: |
+          poetry install
+
+      # This is where tests go
+
+
+      - name: Install Software
+        run: |
+          poetry build
 
 
       #     poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/

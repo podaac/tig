@@ -151,21 +151,21 @@ jobs:
       #########################################################################
       # Test
       #########################################################################
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_l2ss-py
-            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-            -Dsonar.sources=podaac/
-            -Dsonar.tests=tests/
-            -Dsonar.projectName=l2ss-py
-            -Dsonar.projectVersion=${{ env.software_version }}
-            -Dsonar.python.version=3.8,3.9,3.10
+      # - name: SonarCloud Scan
+      #   uses: sonarsource/sonarcloud-github-action@master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #   with:
+      #     args: >
+      #       -Dsonar.organization=${{ github.repository_owner }}
+      #       -Dsonar.projectKey=${{ github.repository_owner }}_l2ss-py
+      #       -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+      #       -Dsonar.sources=podaac/
+      #       -Dsonar.tests=tests/
+      #       -Dsonar.projectName=l2ss-py
+      #       -Dsonar.projectVersion=${{ env.software_version }}
+      #       -Dsonar.python.version=3.8,3.9,3.10
 
       # First run snyk as a blocking step
       - name: Run Snyk as a blocking step

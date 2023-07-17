@@ -148,9 +148,9 @@ jobs:
           echo "GITHUB REF: ${{ github.ref }}"
           echo "VENUE: ${{ env.venue }}"
 
-      # #########################################################################
-      # # Test
-      # #########################################################################
+      #########################################################################
+      # Test
+      #########################################################################
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@master
         env:
@@ -167,29 +167,29 @@ jobs:
             -Dsonar.projectVersion=${{ env.software_version }}
             -Dsonar.python.version=3.8,3.9,3.10
 
-      # # First run snyk as a blocking step
-      # - name: Run Snyk as a blocking step
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: test
-      #     args: >
-      #         --org=${{ secrets.SNYK_ORG_ID }}
-      #         --project-name=${{ github.repository }}
-      #         --severity-threshold=high
-      #         --fail-on=all
+      # First run snyk as a blocking step
+      - name: Run Snyk as a blocking step
+        uses: snyk/actions/python-3.8@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --project-name=${{ github.repository }}
+              --severity-threshold=high
+              --fail-on=all
 
-      # # Next run snyk to report the findings to snyk
-      # - name: Run Snyk on Python
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: monitor
-      #     args: >
-      #       --org=${{ secrets.SNYK_ORG_ID }}
-      #       --project-name=${{ github.repository }}
+      # Next run snyk to report the findings to snyk
+      - name: Run Snyk on Python
+        uses: snyk/actions/python-3.8@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: >
+            --org=${{ secrets.SNYK_ORG_ID }}
+            --project-name=${{ github.repository }}
 
 
 
@@ -257,26 +257,6 @@ jobs:
       #     git push origin "${{ env.software_version }}"
 
       # #########################################################################
-      # # Publish UMM-S
-      # #########################################################################
-      # - name: Publish UMM-S with new version
-      #   uses: podaac/cmr-umm-updater@0.3.0
-      #   if: |
-      #     github.ref == 'refs/heads/main'    ||
-      #     startsWith(github.ref, 'refs/heads/release')
-      #   with:
-      #     umm-s-json: 'cmr/l2ss_cmr_umm_s.json'
-      #     provider: 'POCLOUD'
-      #     env: ${{ env.venue }}
-      #     version: ${{ env.software_version }}
-      #     timeout: 60
-      #     disable_removal: 'true'
-      #   env:
-      #     LAUNCHPAD_TOKEN_SIT: ${{secrets.LAUNCHPAD_TOKEN_SIT}}
-      #     LAUNCHPAD_TOKEN_UAT: ${{secrets.LAUNCHPAD_TOKEN_UAT}}
-      #     LAUNCHPAD_TOKEN_OPS: ${{secrets.LAUNCHPAD_TOKEN_OPS}}
-
-      # #########################################################################
       # # Build and Publish Documentation
       # #########################################################################
       # - name: Build Docs
@@ -288,6 +268,11 @@ jobs:
       #     branch: gh-pages # The branch the action should deploy to.
       #     folder: docs/_build/ # The folder the action should deploy.
       #     target-folder: ${{ env.software_version }}
+
+
+      #########################################################################
+      # Build and Publish Terraform
+      #########################################################################
 
 
       # #########################################################################

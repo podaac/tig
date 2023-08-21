@@ -66,7 +66,9 @@ jobs:
         run: |
           new_version="${{ env.the_version }}+$(git rev-parse --short HEAD)"
           echo "software_version=${new_version}" >> $GITHUB_ENV
-       # Alpha Logic - Use the project version number and add -alpha.1 or bump
+          echo "Github REF: ${{ github.ref }}"
+
+      # Alpha Logic - Use the project version number and add -alpha.1 or bump
       # alpha number
       - name: Bump alpha version
         env:
@@ -75,9 +77,10 @@ jobs:
         if: ${{ github.ref == 'refs/heads/develop' }}
         run: |
           if [[ ${VERSION} == *"-alpha"* ]]; then
-            alpha_number=$(echo "${VERSION}" | sed -e s/^.*-alpha.//g)
+            alpha_number=$(echo "${VERSION}" | sed -e "s/^.*-alpha.//g")
             alpha_number=$((alpha_number+1))
-            the_version=$(echo "$the_version" | sed -e s/-alpha.*//g)
+            the_version=$(echo "$the_version" | sed -e "s/-alpha.*//g")
+            the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
             the_version="${the_version}-alpha.$alpha_number"
             echo "software_version=${the_version}" >> $GITHUB_ENV
             echo "the_version=${the_version}" >> $GITHUB_ENV
@@ -87,22 +90,20 @@ jobs:
             echo "the_version=${the_version}" >> $GITHUB_ENV
           fi
           echo "venue=sit" >> $GITHUB_ENV
+          echo "TARGET_ENV_UPPERCASE=SIT" >> $GITHUB_ENV
 
       # Release Candidate Logic - Remove -alpha* and add -rc.1, or bump the rc
       # number
       - name: Bump rc version
-        # If triggered by push to a release branch
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         env:
           VERSION: ${{ env.the_version }}
-          # True if the version already has a 'rc' pre-release identifier
-#          BUMP_RC: ${{ contains(${env.the_version}, 'rc') }}
         run: |
           if [[ ${VERSION} == *"-rc"* ]]; then
-            rc_number=$(echo "${VERSION}" | sed -e s/^.*-rc.//g)
-            rc_number=$((alpha_number+1))
-            the_version=$(echo "$the_version" | sed -e s/-rc.*//g)
-            the_version="${the_version}-rc.$rc_number"
+            rc_number=$(echo "${VERSION}" | sed -e "s/^.*-rc.//g")
+            rc_number=$((rc_number+1))
+            the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
+            the_version="${the_version}-rc.${rc_number}"
             echo "software_version=${the_version}" >> $GITHUB_ENV
             echo "the_version=${the_version}" >> $GITHUB_ENV
           else
@@ -111,6 +112,7 @@ jobs:
             echo "the_version=${the_version}" >> $GITHUB_ENV
           fi
           echo "venue=uat" >> $GITHUB_ENV
+          echo "TARGET_ENV_UPPERCASE=UAT" >> $GITHUB_ENV
 
       # Release Logic
       - name: Release version
@@ -124,6 +126,7 @@ jobs:
           echo "software_version=$software_version" >> $GITHUB_ENV
           echo "the_version=$software_version" >> $GITHUB_ENV
           echo "venue=ops" >> $GITHUB_ENV
+          echo "TARGET_ENV_UPPERCASE=OPS" >> $GITHUB_ENV
 
 #       # NOTE: This step is platform-specific
 #       # Update the version number in the application package itself
@@ -149,6 +152,46 @@ jobs:
           echo "VENUE: ${{ env.venue }}"
 
       #########################################################################
+      # Install
+      #########################################################################
+      # NOTE: This step is platform-specific
+      # These are gradle-specific steps for installing the application
+      - name: Install Software
+        run: |
+          pip install setuptools -U \
+          pip install pylint \
+          pip install pytest \
+          poetry install
+
+
+      #########################################################################
+      # Snyk
+      #########################################################################
+      # First run snyk as a blocking step
+      - name: Run Snyk as a blocking step
+        uses: snyk/actions/python-3.8@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --project-name=${{ github.repository }}
+              --severity-threshold=high
+              --fail-on=all
+
+      # Next run snyk to report the findings to snyk
+      - name: Run Snyk on Python
+        uses: snyk/actions/python-3.8@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: >
+            --org=${{ secrets.SNYK_ORG_ID }}
+            --project-name=${{ github.repository }}
+    
+      #########################################################################
       # Test
       #########################################################################
       # - name: SonarCloud Scan
@@ -167,41 +210,6 @@ jobs:
       #       -Dsonar.projectVersion=${{ env.software_version }}
       #       -Dsonar.python.version=3.8,3.9,3.10
 
-      # First run snyk as a blocking step
-      # - name: Run Snyk as a blocking step
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #       SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: test
-      #     args: >
-      #         --org=${{ secrets.SNYK_ORG_ID }}
-      #         --project-name=${{ github.repository }}
-      #         --severity-threshold=high
-      #         --fail-on=all
-
-      # Next run snyk to report the findings to snyk
-      # - name: Run Snyk on Python
-      #   uses: snyk/actions/python-3.8@master
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     command: monitor
-      #     args: >
-      #       --org=${{ secrets.SNYK_ORG_ID }}
-      #       --project-name=${{ github.repository }}
-
-      #########################################################################
-      # Build
-      #########################################################################
-      # NOTE: This step is platform-specific
-      # These are gradle-specific steps for installing the application
-      - name: Install Software
-        run: |
-          pip install setuptools -U \
-          pip install pylint \
-          pip install pytest \
-          poetry install
 
       # This is where tests go
       - name: Run Poetry Tests
@@ -214,35 +222,117 @@ jobs:
 
       ## TODO: Find out where the test report goes
 
+
+      #########################################################################
+      # Build
+      #########################################################################
       - name: Install Software
         run: |
           poetry build
 
 
-      # #########################################################################
-      # # Publish new version numbers
-      # #########################################################################
-      # - name: Commit Version Bump
-      #   # If building develop, a release branch, or main then we commit the version bump back to the repo
-      #   if: |
-      #     github.ref == 'refs/heads/develop' ||
-      #     github.ref == 'refs/heads/main'    ||
-      #     startsWith(github.ref, 'refs/heads/release')
-      #   run: |
-      #     git config --global user.name 'l2ss-py bot'
-      #     git config --global user.email 'l2ss-py@noreply.github.com'
-      #     git commit -am "/version ${{ env.software_version }}"
-      #     git push
-      # - name: Push Tag
-      #   if: |
-      #     github.ref == 'refs/heads/develop' ||
-      #     github.ref == 'refs/heads/main'    ||
-      #     startsWith(github.ref, 'refs/heads/release')
-      #   run: |
-      #     git config user.name "${GITHUB_ACTOR}"
-      #     git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-      #     git tag -a "${{ env.software_version }}" -m "Version ${{ env.software_version }}"
-      #     git push origin "${{ env.software_version }}"
+      #########################################################################
+      # Publish new version numbers
+      #########################################################################
+      - name: Commit Version Bump
+        # If building develop, a release branch, or main then we commit the version bump back to the repo
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release')
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git commit -am "/version ${{ env.the_version }}"
+          git push
+
+      - name: Push Tag
+        env:
+          VERSION: ${{ env.the_version }}
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release')
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "Version ${VERSION}"
+          git push origin "${VERSION}"
+
+      #########################################################################
+      # Publish release to releases
+      #########################################################################
+      - name: Upload Release Artifacts
+        uses: ncipollo/release-action@v1.12.0
+        with:
+          tag: ${{ env.the_version }}
+          artifacts: "dist/*.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      #########################################################################
+      # Build and Publish Docker Container
+      #########################################################################
+      # Setup docker to build and push images
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy Env Override
+        if: |
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
+        run: |
+          message="${{ github.event.head_commit.message }}"
+          trimmed_message=${message:1}  # Remove leading slash
+          override_env=$(echo "$trimmed_message" | grep -oE '[^[:space:]]+$')
+          override_env_upper=$(echo "$trimmed_message" | awk '{print toupper($NF)}')
+          echo "THE_ENV=${override_env}" >> $GITHUB_ENV
+          echo "TARGET_ENV_UPPERCASE=${override_env_upper}" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.the_version }}
+            type=raw,value=${{ env.the_env }}
+
+      - name: Show meta outputs
+        run: |
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "labels: ${{ steps.meta.outputs.labels }}"
+
+      - name: Build and push Docker image
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: true
+          pull: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Upload Docker image to ECR
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ env.the_version }}
+          create_repo: true
+          dockerfile: ./docker/Dockerfile
 
       # #########################################################################
       # # Build and Publish Documentation

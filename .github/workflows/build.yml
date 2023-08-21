@@ -323,6 +323,12 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Upload Docker image to ECR
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
         uses: vitr/actions-build-and-upload-to-ecs@master
         with:
           access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}

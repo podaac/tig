@@ -281,6 +281,7 @@ jobs:
         run: |
           poetry config repositories.testpypi https://test.pypi.org/legacy/
           poetry publish -r testpypi
+
       - name: Publish to pypi.org
         if: ${{ github.ref == 'refs/heads/main' }}
         id: pypi-publish
@@ -288,26 +289,7 @@ jobs:
           POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
         run: |
           poetry publish
-      - name: Log in to the Container registry
-        if: |
-          steps.pypi-test-publish.conclusion == 'success' ||
-          steps.pypi-publish.conclusion == 'success'
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata (tags, labels) for Docker
-        if: |
-          steps.pypi-test-publish.conclusion == 'success' ||
-          steps.pypi-publish.conclusion == 'success'
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=pep440,pattern={{version}},value=${{ env.software_version }}
-            type=raw,value=${{ env.venue }}
+
       - name: Wait for package
         if: |
           steps.pypi-test-publish.conclusion == 'success' ||
@@ -322,6 +304,9 @@ jobs:
       #########################################################################
       # Setup docker to build and push images
       - name: Log in to the Container registry
+        if: |
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         uses: docker/login-action@v1
         with:
           registry: ${{ env.REGISTRY }}
@@ -341,6 +326,9 @@ jobs:
           echo "TARGET_ENV_UPPERCASE=${override_env_upper}" >> $GITHUB_ENV
 
       - name: Extract metadata (tags, labels) for Docker
+        if: |
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
         id: meta
         uses: docker/metadata-action@v4
         with:

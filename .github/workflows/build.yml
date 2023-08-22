@@ -128,15 +128,11 @@ jobs:
           echo "venue=ops" >> $GITHUB_ENV
           echo "TARGET_ENV_UPPERCASE=OPS" >> $GITHUB_ENV
 
-#       # NOTE: This step is platform-specific
-#       # Update the version number in the application package itself
-#       - name: Update version number in the application package
-#         run: |
-#           ./gradlew setCurrentVersion -Pargs=${{ env.the_version }}
-#           ./gradlew currentVersion -q > .temp_version.out
-#           new_version=$(cat .temp_version.out |grep -v Downloading |grep -v '%')
-#           rm .temp_version.out
-#           echo "New Application Version: $new_version"
+      # NOTE: This step is platform-specific
+      # Update the version number in the application package itself
+      - name: Update version number in the application package
+        run: |
+          poetry version ${CURRENT_VERSION%%rc*}
 
 
       #########################################################################

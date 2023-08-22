@@ -271,16 +271,16 @@ jobs:
       #########################################################################
       # Publish to pypi.org
       #########################################################################
-      - name: Publish to test.pypi.org
-        id: pypi-test-publish
-        if: |
-          github.ref == 'refs/heads/develop' ||
-          startsWith(github.ref, 'refs/heads/release')
-        env:
-          POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.POETRY_PYPI_TOKEN_TESTPYPI}}
-        run: |
-          poetry config repositories.testpypi https://test.pypi.org/legacy/
-          poetry publish -r testpypi
+      # - name: Publish to test.pypi.org
+      #   id: pypi-test-publish
+      #   if: |
+      #     github.ref == 'refs/heads/develop' ||
+      #     startsWith(github.ref, 'refs/heads/release')
+      #   env:
+      #     POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.POETRY_PYPI_TOKEN_TESTPYPI}}
+      #   run: |
+      #     poetry config repositories.testpypi https://test.pypi.org/legacy/
+      #     poetry publish -r testpypi
 
       # - name: Publish to pypi.org
       #   if: ${{ github.ref == 'refs/heads/main' }}

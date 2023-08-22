@@ -277,10 +277,21 @@ jobs:
       #     github.ref == 'refs/heads/develop' ||
       #     startsWith(github.ref, 'refs/heads/release')
       #   env:
-      #     POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.POETRY_PYPI_TOKEN_TESTPYPI}}
+      #     POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.TEST_PYPI_API_TOKEN}}
       #   run: |
       #     poetry config repositories.testpypi https://test.pypi.org/legacy/
       #     poetry publish -r testpypi
+
+
+      - name: Publish package distributions to PyPI
+        id: pypi-test-publish
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          startsWith(github.ref, 'refs/heads/release')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+  
 
       # - name: Publish to pypi.org
       #   if: ${{ github.ref == 'refs/heads/main' }}
@@ -291,6 +302,10 @@ jobs:
       #     poetry publish
 
       - name: Publish package distributions to PyPI
+        id: pypi-publish
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          startsWith(github.ref, 'refs/heads/release')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

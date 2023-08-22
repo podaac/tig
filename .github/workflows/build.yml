@@ -132,7 +132,7 @@ jobs:
       # Update the version number in the application package itself
       - name: Update version number in the application package
         run: |
-          poetry version ${CURRENT_VERSION%%rc*}
+          poetry version ${{ env.the_version }}
 
 
       #########################################################################

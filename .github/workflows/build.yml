@@ -282,13 +282,16 @@ jobs:
           poetry config repositories.testpypi https://test.pypi.org/legacy/
           poetry publish -r testpypi
 
-      - name: Publish to pypi.org
-        if: ${{ github.ref == 'refs/heads/main' }}
-        id: pypi-publish
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
-        run: |
-          poetry publish
+      # - name: Publish to pypi.org
+      #   if: ${{ github.ref == 'refs/heads/main' }}
+      #   id: pypi-publish
+      #   env:
+      #     POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
+      #   run: |
+      #     poetry publish
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Wait for package
         if: |

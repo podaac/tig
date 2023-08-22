@@ -317,7 +317,7 @@ jobs:
           steps.pypi-test-publish.conclusion == 'success' ||
           steps.pypi-publish.conclusion == 'success'
         run: |
-          pip install tenacity
+          pip install tenacity logging 
           ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.software_version }}
            
             

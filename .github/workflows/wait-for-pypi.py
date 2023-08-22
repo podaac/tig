@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import logging
-import subprocess
 import sys
 import tempfile
+import logging
+import subprocess
 
 import tenacity
 

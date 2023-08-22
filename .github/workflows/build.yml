@@ -311,15 +311,15 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-
-#      - name: Wait for package
-#        if: |
-#          steps.pypi-test-publish.conclusion == 'success' ||
-#          steps.pypi-publish.conclusion == 'success'
-#        run: |
-#          pip install tenacity
-#          ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.software_version }}
-            
+      ## Due to observed delays between upload and availability, wait for the package to become available
+      - name: Wait for package
+        if: |
+          steps.pypi-test-publish.conclusion == 'success' ||
+          steps.pypi-publish.conclusion == 'success'
+        run: |
+          pip install tenacity
+          ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.software_version }}
+           
             
       #########################################################################
       # Build and Publish Docker Container

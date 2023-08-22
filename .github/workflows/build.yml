@@ -312,13 +312,13 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
 
-      - name: Wait for package
-        if: |
-          steps.pypi-test-publish.conclusion == 'success' ||
-          steps.pypi-publish.conclusion == 'success'
-        run: |
-          pip install tenacity
-          ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.software_version }}
+#      - name: Wait for package
+#        if: |
+#          steps.pypi-test-publish.conclusion == 'success' ||
+#          steps.pypi-publish.conclusion == 'success'
+#        run: |
+#          pip install tenacity
+#          ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.software_version }}
             
             
       #########################################################################

@@ -375,11 +375,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/lambdaDockerfile
           push: true
           pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
       - name: Upload Docker image to ECR
         if: |

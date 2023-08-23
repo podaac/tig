@@ -400,7 +400,8 @@ jobs:
           tags: ${{ env.the_version }}
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
-
+          build-args: |
+            SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
       # #########################################################################
       # # Build and Publish Documentation
       # #########################################################################

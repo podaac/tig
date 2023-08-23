@@ -104,6 +104,7 @@ jobs:
             rc_number=$(echo "${VERSION}" | sed -e "s/^.*-rc.//g")
             rc_number=$((rc_number+1))
             the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
+            the_version=$(echo "$the_version" | sed -e "s/-alpha.*//g")
             the_version="${the_version}-rc.${rc_number}"
             echo "software_version=${the_version}" >> $GITHUB_ENV
             echo "the_version=${the_version}" >> $GITHUB_ENV

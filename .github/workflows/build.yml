@@ -358,7 +358,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{version}},value=${{ env.the_version }}
-            type=raw,value=${{ env.the_env }}
+            type=raw,value=${{ env.THE_ENV }}
 
       - name: Show meta outputs
         run: |
@@ -399,7 +399,7 @@ jobs:
           region: us-west-2
           tags: ${{ env.the_version }}
           create_repo: true
-          dockerfile: ./docker/Dockerfile
+          dockerfile: ./docker/lambdaDockerfile
 
       # #########################################################################
       # # Build and Publish Documentation

@@ -288,11 +288,18 @@ jobs:
       #########################################################################
       # Publish release to releases
       #########################################################################
+      - name: Create Zip release
+        run: |
+          ls -al
+          cd terraform
+          ls -al
+          zip -r ../tig-terraform-${{ env.new_version }}.zip *
+
       - name: Upload Release Artifacts
         uses: ncipollo/release-action@v1.12.0
         with:
           tag: ${{ env.the_version }}
-          artifacts: "dist/*.zip"
+          artifacts: "*.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
 
 

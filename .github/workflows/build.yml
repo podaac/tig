@@ -130,6 +130,7 @@ jobs:
             VERSION="${the_version}-rc.${rc_number}"
           else
             echo "Initializing the first release candidate for ${VERSION}"
+            VERSION=$(echo "${VERSION}" |sed -e "s/-alpha.*//g")
             VERSION="${VERSION}-rc.1"
           fi
           echo "software_version=${VERSION}" >> $GITHUB_ENV
@@ -433,27 +434,6 @@ jobs:
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
-      # - name: Configure AWS credentials
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-      #     aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-      #     aws-region: us-west-2
-      
-      # - name: Login to Amazon ECR
-      #   id: login-ecr
-      #   uses: aws-actions/amazon-ecr-login@v1
-      
-      # - name: Build, tag, and push image to Amazon ECR
-      #   env:
-      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     ECR_REPOSITORY: podaac/tig
-      #     IMAGE_TAG: ${{ env.new_version }}
-      #   run: |
-      #     cd docker
-      #     docker build -f lambdaDockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} .
-      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
       # #########################################################################
       # # Build and Publish Documentation
       # #########################################################################
@@ -469,7 +449,41 @@ jobs:
 
 
       #########################################################################
-      # Build and Publish Terraform
+      # Deploy to AWS via Terraform
       #########################################################################
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 0.13.6
 
+      - name: Deploy Terraform
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
+        working-directory: terraform_deploy/
+        env:
+          AWS_ACCESS_KEY_ID:       ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          AWS_SECRET_ACCESS_KEY:   ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          AWS_ACCOUNT_ID:          ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          AWS_DEFAULT_REGION:      us-west-2
 
+          TF_VAR_forge_docker_image: "ghcr.io/podaac/forge:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
+          TF_VAR_EARTH_DATA_LOGIN_CLIENT_ID: ${{ secrets[format('EARTH_DATA_LOGIN_CLIENT_ID_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          TF_VAR_EARTH_DATA_LOGIN_PASSWORD: ${{ secrets[format('EARTH_DATA_LOGIN_PASSWORD_{0}', env.TARGET_ENV_UPPERCASE)] }}
+
+        run: |
+          ls -al
+          ls -al bin/
+          which python3
+          python3 --version
+          python3 override.py https://github.com/podaac/forge/releases/download/${{ env.new_version }}/tig-${{ env.new_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.new_version }}
+          ls -al
+          echo "Show override contents"
+          cat override.tf.json
+          echo "End show override contents"
+          terraform --version
+          source bin/config.sh ${{ env.venue }}
+          terraform plan -var-file=tfvars/"${{ env.venue }}".tfvars -var="app_version=${{ env.new_version }}" -out="tfplan"
+          terraform apply -auto-approve tfplan

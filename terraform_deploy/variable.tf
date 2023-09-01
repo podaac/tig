@@ -31,4 +31,3 @@ variable "default_tags" {
 
 variable "stage" {}
 variable "app_version" {}
-variable "credentials" {}

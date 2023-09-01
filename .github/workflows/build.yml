@@ -51,6 +51,7 @@ jobs:
           cat .temp_version.out
           the_version=$(cat .temp_version.out |grep -v Downloading |grep -v '%' |sed -e 's/podaac-tig *//')
           rm .temp_version.out
+          echo "old_version=$the_version" >> $GITHUB_ENV
           echo "the_version=$the_version" >> $GITHUB_ENV
           echo "Initial Version: $the_version"
 

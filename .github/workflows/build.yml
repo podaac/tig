@@ -312,7 +312,7 @@ jobs:
       #     poetry publish -r testpypi
 
 
-      - name: Publish package distributions to PyPI
+      - name: Publish package distributions to PyPI Test
         id: pypi-test-publish
         if: |
           github.ref == 'refs/heads/develop' ||
@@ -412,27 +412,47 @@ jobs:
           build-args: |
             SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
+
       ## Build and publish to ECR
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Upload Docker image to ECR
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
+        uses: vitr/actions-build-and-upload-to-ecs@master
         with:
-          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-          aws-region: us-west-2
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ env.the_version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: 'SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}'
+
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+      #     aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+      #     aws-region: us-west-2
       
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      # - name: Login to Amazon ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v1
       
-      - name: Build, tag, and push image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: podaac/tig
-          IMAGE_TAG: ${{ env.new_version }}
-        run: |
-          cd docker
-          docker build -f lambdaDockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      # - name: Build, tag, and push image to Amazon ECR
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     ECR_REPOSITORY: podaac/tig
+      #     IMAGE_TAG: ${{ env.new_version }}
+      #   run: |
+      #     cd docker
+      #     docker build -f lambdaDockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} .
+      #     docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       # #########################################################################
       # # Build and Publish Documentation
@@ -452,32 +472,4 @@ jobs:
       # Build and Publish Terraform
       #########################################################################
 
-
-      # #########################################################################
-      # # Build and Publish Python Artifact
-      # #########################################################################
-      # - name: Build Python Artifact
-      #   run: |
-      #     poetry build
-      # - uses: actions/upload-artifact@v2
-      #   with:
-      #     name: python-artifact
-      #     path: dist/*
-      # - name: Publish to test.pypi.org
-      #   id: pypi-test-publish
-      #   if: |
-      #     github.ref == 'refs/heads/develop' ||
-      #     startsWith(github.ref, 'refs/heads/release')
-      #   env:
-      #     POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.POETRY_PYPI_TOKEN_TESTPYPI}}
-      #   run: |
-      #     poetry config repositories.testpypi https://test.pypi.org/legacy/
-      #     poetry publish -r testpypi
-      # - name: Publish to pypi.org
-      #   if: ${{ github.ref == 'refs/heads/main' }}
-      #   id: pypi-publish
-      #   env:
-      #     POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
-      #   run: |
-      #     poetry publish
 

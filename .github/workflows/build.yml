@@ -469,7 +469,7 @@ jobs:
           AWS_ACCOUNT_ID:          ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
           AWS_DEFAULT_REGION:      us-west-2
 
-          TF_VAR_forge_docker_image: "ghcr.io/podaac/forge:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
+          TF_VAR_tig_docker_image: "ghcr.io/podaac/tig:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
           TF_VAR_EARTH_DATA_LOGIN_CLIENT_ID: ${{ secrets[format('EARTH_DATA_LOGIN_CLIENT_ID_{0}', env.TARGET_ENV_UPPERCASE)] }}
           TF_VAR_EARTH_DATA_LOGIN_PASSWORD: ${{ secrets[format('EARTH_DATA_LOGIN_PASSWORD_{0}', env.TARGET_ENV_UPPERCASE)] }}
 
@@ -478,7 +478,7 @@ jobs:
           ls -al bin/
           which python3
           python3 --version
-          python3 override.py https://github.com/podaac/forge/releases/download/${{ env.new_version }}/tig-${{ env.new_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.new_version }}
+          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.new_version }}/tig-${{ env.new_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.new_version }}
           ls -al
           echo "Show override contents"
           cat override.tf.json

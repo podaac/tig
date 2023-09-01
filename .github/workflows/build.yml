@@ -59,14 +59,17 @@ jobs:
       - name: Bump pre-alpha version
         # If triggered by push to a feature branch
         if: |
-          ${{ startsWith(github.ref, 'refs/heads/issue') }}      ||
-          ${{ startsWith(github.ref, 'refs/heads/dependabot/') }} ||
-          ${{ startsWith(github.ref, 'refs/heads/feature/') }}
+          startsWith(github.ref, 'refs/heads/issue') || 
+          startsWith(github.ref, 'refs/heads/dependabot/') || 
+          startsWith(github.ref, 'refs/heads/feature/')
         # At pre-alpha, append git-commit to version, set it into gradle
         # property, read the version out and set to build_service_version
         run: |
-          new_version="${{ env.the_version }}+$(git rev-parse --short HEAD)"
+          the_version=$(echo "${{ env.the_version }}" | sed -e "s/-alpha.*//g")
+          the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
+          new_version="${the_version}-$(git rev-parse --short HEAD)"
           echo "software_version=${new_version}" >> $GITHUB_ENV
+          echo "new_version=${new_version}" >> $GITHUB_ENV
           echo "Github REF: ${{ github.ref }}"
 
       # Alpha Logic - Use the project version number and add -alpha.1 or bump
@@ -79,6 +82,7 @@ jobs:
         run: |
           if [[ ${VERSION} == *"-alpha"* ]]; then
             alpha_number=$(echo "${VERSION}" | sed -e "s/^.*-alpha.//g")
+            alpha_number=$(echo "$alpha_number" | sed -e "s/-rc.*//g")
             alpha_number=$((alpha_number+1))
             the_version=$(echo "$the_version" | sed -e "s/-alpha.*//g")
             the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
@@ -90,6 +94,7 @@ jobs:
             echo "software_version=${the_version}" >> $GITHUB_ENV
             echo "the_version=${the_version}" >> $GITHUB_ENV
           fi
+          echo "new_version=${the_version}" >> $GITHUB_ENV
           echo "venue=sit" >> $GITHUB_ENV
           echo "TARGET_ENV_UPPERCASE=SIT" >> $GITHUB_ENV
 
@@ -99,22 +104,39 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         env:
           VERSION: ${{ env.the_version }}
+          COMMIT_VERSION: ${{ github.ref }}
         run: |
+          commit_version=$COMMIT_VERSION
+          commit_version=$(echo "${commit_version}" |sed -e "s/^.*\///g")
+          commit_version=$(echo "${commit_version}" |sed -e "s/-alpha.*//g")
+          commit_version=$(echo "${commit_version}" |sed -e "s/-rc.*//g")
+          echo "COMMIT VERSION: $commit_version"
+          file_version=${VERSION}
+          file_version=$(echo "${file_version}" |sed -e "s/-alpha.*//g")
+          file_version=$(echo "${file_version}" |sed -e "s/-rc.*//g")
+          echo "FILE VERSION: $file_version"
+          if [[ "$commit_version" != "$file_version" ]]; then
+            echo "Commit version and file version are different, using commit version"
+            VERSION=$commit_version
+          fi
           if [[ ${VERSION} == *"-rc"* ]]; then
+            echo "Bumping up the release candidate number from ${VERSION}"
             rc_number=$(echo "${VERSION}" | sed -e "s/^.*-rc.//g")
+            rc_number=$(echo "${rc_number}" | sed -e "s/-alpha.*//g")
             rc_number=$((rc_number+1))
             the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
             the_version=$(echo "$the_version" | sed -e "s/-alpha.*//g")
-            the_version="${the_version}-rc.${rc_number}"
-            echo "software_version=${the_version}" >> $GITHUB_ENV
-            echo "the_version=${the_version}" >> $GITHUB_ENV
+            VERSION="${the_version}-rc.${rc_number}"
           else
-            the_version="${{ env.the_version }}-rc.1"
-            echo "software_version=${the_version}" >> $GITHUB_ENV
-            echo "the_version=${the_version}" >> $GITHUB_ENV
+            echo "Initializing the first release candidate for ${VERSION}"
+            VERSION="${VERSION}-rc.1"
           fi
+          echo "software_version=${VERSION}" >> $GITHUB_ENV
+          echo "the_version=${VERSION}" >> $GITHUB_ENV
+          echo "new_version=${VERSION}" >> $GITHUB_ENV
           echo "venue=uat" >> $GITHUB_ENV
           echo "TARGET_ENV_UPPERCASE=UAT" >> $GITHUB_ENV
+
 
       # Release Logic
       - name: Release version
@@ -125,16 +147,12 @@ jobs:
         # Remove -rc.* from end of version string
         run: |
           software_version=$(echo "${VERSION}" | sed -e s/-rc.*//g)
+          software_version=$(echo "${software_version}" | sed -e s/-alpha.*//g)
           echo "software_version=$software_version" >> $GITHUB_ENV
+          echo "new_version=$software_version" >> $GITHUB_ENV
           echo "the_version=$software_version" >> $GITHUB_ENV
           echo "venue=ops" >> $GITHUB_ENV
           echo "TARGET_ENV_UPPERCASE=OPS" >> $GITHUB_ENV
-
-      # NOTE: This step is platform-specific
-      # Update the version number in the application package itself
-      - name: Update version number in the application package
-        run: |
-          poetry version ${{ env.the_version }}
 
 
       #########################################################################
@@ -143,11 +161,19 @@ jobs:
       - name: Versioning Summary
         run: |
           echo "the_service: ${{ env.the_service }}"
-          echo "the_version: ${{ env.the_version }}"
+          echo "old version : ${{ env.old_version }}"
+          echo "new version : ${{ env.new_version }}"
           echo "the_env: ${{ env.the_env }}"
           echo "software_version: ${{ env.software_version }}"
           echo "GITHUB REF: ${{ github.ref }}"
           echo "VENUE: ${{ env.venue }}"
+          echo "Target Env Uppercase: ${{ env.TARGET_ENV_UPPERCASE }}"
+
+      # NOTE: This step is platform-specific
+      # Update the version number in the application package itself
+      - name: Update version number in the application package
+        run: |
+          poetry version ${{ env.the_version }}
 
       #########################################################################
       # Install

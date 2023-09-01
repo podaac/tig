@@ -412,19 +412,42 @@ jobs:
             SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
 
-      - name: Push to ECR
-        if: |
-          github.ref == 'refs/heads/develop' ||
-          github.ref == 'refs/heads/main'    ||
-          startsWith(github.ref, 'refs/heads/release') ||
-          github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
-        uses: jwalton/gh-ecr-push@v1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-          secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
-          region: us-west-2
-          image: ${{ env.IMAGE_NAME }}:${{ env.new_version }}          
+          aws-access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          aws-secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          aws-region: us-west-2
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: podaac/forge
+          IMAGE_TAG: ${{ env.new_version }}
+        run: |
+          cd docker
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} --file lambdaDockerfile
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+
+      # - name: Push to ECR
+      #   if: |
+      #     github.ref == 'refs/heads/develop' ||
+      #     github.ref == 'refs/heads/main'    ||
+      #     startsWith(github.ref, 'refs/heads/release') ||
+      #     github.event.head_commit.message == '/deploy sit' ||
+      #     github.event.head_commit.message == '/deploy uat'
+      #   uses: jwalton/gh-ecr-push@v1
+      #   with:
+      #     access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+      #     secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
+      #     region: us-west-2
+      #     image: ${{ env.IMAGE_NAME }}:${{ env.new_version }}          
 
       # - name: Upload Docker image to ECR
       #   if: |

@@ -431,7 +431,7 @@ jobs:
           IMAGE_TAG: ${{ env.new_version }}
         run: |
           cd docker
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} --file lambdaDockerfile
+          docker build -f lambdaDockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }} .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
 

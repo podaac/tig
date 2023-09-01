@@ -431,7 +431,7 @@ jobs:
           tags: ${{ env.the_version }}
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
-          extra_build_args: 'SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}'
+          extra_build_args: "SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}"
 
       # - name: Configure AWS credentials
       #   uses: aws-actions/configure-aws-credentials@v1

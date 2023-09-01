@@ -424,7 +424,6 @@ jobs:
           access-key-id: ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
           secret-access-key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
           region: us-west-2
-          local-image: ${{ env.IMAGE_NAME }}
           image: ${{ env.IMAGE_NAME }}:${{ env.new_version }}          
 
       # - name: Upload Docker image to ECR

@@ -297,7 +297,7 @@ class TIG():
             # if no fill value get fill value from configuration if defined
             fill_value = var.get('fill_value')
             if fill_value is None:
-                raise Exception(f'There is no fill value for variable {variable}') from KeyError
+                raise KeyError(f'There is no fill value for variable {variable}') from KeyError
         local_dataset.close()
 
         # Get palette info
@@ -523,7 +523,7 @@ def load_json_palette(palette_dir, palette_name, alpha):
     except ValueError:
         # palette register via other images
         pass
-        
+
     return cm.get_cmap(palette_name)
 
 

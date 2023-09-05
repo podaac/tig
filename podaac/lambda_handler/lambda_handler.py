@@ -198,7 +198,7 @@ class ImageGenerator(Process):
                 if palette not in palettes:
                     palettes.append(palette)
                     palette_url = "{}/{}.json".format(palette_base_url, palette)
-                    response = requests.get(palette_url)
+                    response = requests.get(palette_url, timeout=60)
                     palette_full_path = "{}/{}.json".format(self.path, palette)
                     with open(palette_full_path, 'wb') as file_:
                         file_.write(response.content)
@@ -217,7 +217,7 @@ class ImageGenerator(Process):
 
         if config_url:
             file_url = "{}/{}.cfg".format(config_url, config_name)
-            response = requests.get(file_url)
+            response = requests.get(file_url, timeout=60)
             cfg_file_full_path = "{}/{}.cfg".format(self.path, config_name)
             with open(cfg_file_full_path, 'wb') as file_:
                 file_.write(response.content)
@@ -226,7 +226,7 @@ class ImageGenerator(Process):
             config_s3 = 's3://{}.cfg'.format(os.path.join(config_bucket, config_dir, config_name))
             cfg_file_full_path = self.download_file_from_s3(config_s3, self.path)
         else:
-            raise Exception('Environment variable to get configuration files were not set')
+            raise ValueError('Environment variable to get configuration files were not set')
 
         return cfg_file_full_path
 

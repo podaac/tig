@@ -51,6 +51,10 @@ file_schema = {
       "type": {
         "description": "Type of file (e.g. data, metadata, browse)",
         "type": "string"
+      },
+      "description": {
+        "description": "variable values",
+        "type": "string"
       }
     }
   }

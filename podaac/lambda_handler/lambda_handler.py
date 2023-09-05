@@ -257,7 +257,7 @@ class ImageGenerator(Process):
 
         return self.input
 
-    def generate_file_dictionary(self, file_, image_file, output_file_basename, collection_files, buckets):
+    def generate_file_dictionary(self, file_, image_file, output_file_basename, collection_files, buckets, variable, group):
         """function to generate an information for an image for cumulus
 
         Parameters
@@ -272,12 +272,20 @@ class ImageGenerator(Process):
             collection list of files on how to handle each file type
         buckets: dict
             dictionary of buckets
+        variable: string
+            variable used to generate image file
+        group: string
+            group the variable belong to could be none
 
         Returns
         ----------
         dict
             dictionary data of an image uploaded to s3
         """
+
+        description = variable
+        if group is not None:
+            description = f'{group}/{variable}'
 
         try:
             prefix = os.path.dirname(file_['key'])
@@ -286,7 +294,8 @@ class ImageGenerator(Process):
                 "fileName": output_file_basename,
                 "bucket": self.get_bucket(output_file_basename, collection_files, buckets)['name'],
                 "size": os.path.getsize(image_file),
-                "type": self.get_file_type(output_file_basename, collection_files)
+                "type": self.get_file_type(output_file_basename, collection_files),
+                "description": description
             }
             s3_link = f's3://{upload_file_dict["bucket"]}/{upload_file_dict["key"]}'
 
@@ -340,12 +349,12 @@ class ImageGenerator(Process):
         with open(config_file) as config_f:
             read_config = json.load(config_f)
 
-        variables = read_config.get('imgVariables', [])
+        variables_config = read_config.get('imgVariables', [])
 
         parent_connections = []
         processes = []
 
-        var_list = [variables[:len(variables)//2], variables[len(variables)//2:]]
+        var_list = [variables_config[:len(variables_config)//2], variables_config[len(variables_config)//2:]]
 
         for variables in var_list:
             if variables:
@@ -366,10 +375,13 @@ class ImageGenerator(Process):
         for parent_connection in parent_connections:
             image_list += parent_connection.recv()[0]
 
-        for image_file in image_list:
+        for image_dict in image_list:
             try:
+                image_file = image_dict.get('image_file')
+                variable = image_dict.get('variable')
+                group = image_dict.get('group')
                 output_file_basename = os.path.basename(image_file)
-                upload_file_dict = self.generate_file_dictionary(file_, image_file, output_file_basename, collection_files, buckets)
+                upload_file_dict = self.generate_file_dictionary(file_, image_file, output_file_basename, collection_files, buckets, variable, group)
                 uploaded_files.append(upload_file_dict)
             except Exception as ex:
                 self.logger.error("Error uploading image from s3: {}".format(ex), exc_info=True)

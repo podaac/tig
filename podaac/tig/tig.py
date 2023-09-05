@@ -103,7 +103,7 @@ class TIG():
         lon_grid, lat_grid = np.meshgrid(exact_lons, exact_lats)
         return(lon_grid, lat_grid)
 
-    def get_lon_lat(self):
+    def get_lon_lat(self, param_group=None):
         """
         Function to get the longitude masked array and latatiude masked array
 
@@ -114,6 +114,9 @@ class TIG():
 
         group, _, lon_var = self.config['lonVar'].rpartition('/')
         _, _, lat_var = self.config['latVar'].rpartition('/')
+
+        if param_group:
+            group = param_group
         local_dataset = xr.open_dataset(self.input_file, group=group, decode_times=False)
 
         lon_array = local_dataset[lon_var].to_masked_array()
@@ -147,6 +150,8 @@ class TIG():
             Fill in values from the nearest grid cell to match pixel resolution
         world_file : bool
             Output an Esri world file for each image that can be used by GIS tools
+       granule_id : string
+            The granule_id of the granule file
         Returns
         -------
         list
@@ -154,6 +159,34 @@ class TIG():
         """
 
         self.logger.info("\nProcessing %s", self.input_file)
+        output_images = []
+        if self.config.get('multi_lon_lat'):
+            for group in self.config.get('multi_groups'):
+                output_images += self.generate_images_group(image_format, nearest, world_file, granule_id, group=group)
+        else:
+            output_images = self.generate_images_group(image_format, nearest, world_file, granule_id, group=None)
+        return output_images
+
+    def generate_images_group(self, image_format='png', nearest=False, world_file=False, granule_id="", group=None):
+        """
+        Generates images for each configured variable in a NetCDF file.
+        Parameters
+        ----------
+        image_format : string
+            Any output image formatted supported by matplotlib
+        nearest : bool
+            Fill in values from the nearest grid cell to match pixel resolution
+        world_file : bool
+            Output an Esri world file for each image that can be used by GIS tools
+        granule_id : string
+            The granule_id of the granule file
+        param_group : string
+            The group name in which the dataset file will be open with
+        Returns
+        -------
+        list
+            List of dictionary with image_file location, variable and group
+        """
 
         # Only use alpha channel with PNGs
         if image_format == 'png':
@@ -162,7 +195,7 @@ class TIG():
             self.logger.debug("No alpha channel")
             alpha = False
 
-        lon_array, lat_array = self.get_lon_lat()
+        lon_array, lat_array = self.get_lon_lat(param_group=group)
 
         # Get Bounds of the dataset
         eastern = lon_array.max()
@@ -200,9 +233,10 @@ class TIG():
                                                       image_format,
                                                       nearest,
                                                       world_file,
-                                                      granule_id)
+                                                      granule_id,
+                                                      group)
             if output_image_file is not None:
-                output_images.append(output_image_file)
+                output_images.append({'image_file': output_image_file, 'variable': var['id'], 'group': group})
 
         self.logger.info("Finished processing variables")
         return output_images
@@ -215,7 +249,8 @@ class TIG():
                          image_format='png',
                          nearest=False,
                          world_file=False,
-                         granule_id=""):
+                         granule_id="",
+                         param_group=None):
         """
         Processes an invidual variable to generate an image
         Parameters
@@ -234,6 +269,10 @@ class TIG():
             Fill in values from the nearest grid cell to match pixel resolution
         world_file : bool
             Output an Esri world file for each image that can be used by GIS tools
+        granule_id : string
+            The granule_id of the granule file
+        param_group : string
+            The group name in which the dataset file will be open with
         Returns
         -------
         list
@@ -245,6 +284,8 @@ class TIG():
         self.logger.info('variable: %s', config_variable)
 
         group, _, variable = config_variable.rpartition('/')
+        if param_group:
+            group = param_group
         local_dataset = xr.open_dataset(self.input_file, group=group, decode_times=False)
 
         # Get variable array and fill value
@@ -264,7 +305,7 @@ class TIG():
         colormap = load_json_palette(self.palette_dir, var['palette'], alpha)
 
         # Set the output location
-        group_string = group.strip('/').replace('/', '.')
+        group_string = group.strip('/').replace('/', '.').replace(" ", "_")
         file_name = '.'.join(x for x in [granule_id, group_string, variable, image_format] if x)
         output_location = "{}/{}".format(self.output_dir, file_name)
         if not os.path.exists(self.output_dir):
@@ -477,8 +518,12 @@ def load_json_palette(palette_dir, palette_name, alpha):
                   for y in palette['Palette']['values']['value']]
 
     cmap = col.ListedColormap(colors, palette_name)
-    cm.register_cmap(cmap=cmap)
-
+    try:
+        cm.register_cmap(cmap=cmap)
+    except ValueError:
+        # palette register via other images
+        pass
+        
     return cm.get_cmap(palette_name)
 
 

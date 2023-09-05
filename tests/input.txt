@@ -56,7 +56,15 @@
                   "fileName": "test_granule.nc",
                   "key": "test_folder/test_granule.nc",
                   "type":"data"
+               },
+               {
+                  "bucket": "test-prefix-protected-test",
+                  "fileName": "test_granule.nc",
+                  "key": "test_folder/test_granule.nc",
+                  "type": "data",
+                  "description": "test_var"
                }
+
             ]
          }
       ]

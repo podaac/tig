@@ -184,9 +184,9 @@ jobs:
       # These are gradle-specific steps for installing the application
       - name: Install Software
         run: |
-          pip install setuptools -U \
-          pip install pylint \
-          pip install pytest \
+          pip install setuptools -U
+          pip install pylint
+          pip install pytest
           poetry install
 
 

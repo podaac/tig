@@ -240,9 +240,8 @@ jobs:
       # This is where tests go
       - name: Run Poetry Tests
         run: |
-          poetry run pylint podaac \
-          poetry run flake8 podaac \
-          poetry run pytest --help \
+          poetry run pylint podaac
+          poetry run flake8 podaac
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=html -m "not aws and not integration" tests/
       # poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/
 

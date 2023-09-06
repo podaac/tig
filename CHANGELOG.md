@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.6.1]
+
+### Added
+### Changed
+- **Moved repo to Github.com**
+  - Repo moved here: https://github.com/podaac/tig
+  - Now builds and deploys in github.com Actions instead of Jenkins 
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+
 ## [0.6.0]
 
 ### Added

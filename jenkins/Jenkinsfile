@@ -257,10 +257,30 @@ pipeline {
                                     }
                                 }
                                 stage('Snyk') {
-                                    steps{
-                                        unstash name: 'build-info'
-                                        withCredentials([string(credentialsId: env.SNYK_TOKEN_ID, variable: 'SNYK_TOKEN')]) {
-                                            sh "snyk monitor --org=po.daac --project-name=podaac/${build_info.service_name}"
+                                    steps {
+                                        script {
+                                            def maxRetries = 3
+                                            def retries = 0
+                                            def success = false
+
+                                            unstash name: 'build-info'
+                                            
+                                            while (retries < maxRetries && !success) {
+                                                try {                                            
+                                                    withCredentials([string(credentialsId: env.SNYK_TOKEN_ID, variable: 'SNYK_TOKEN')]) {
+                                                        sh "snyk monitor --org=po.daac --project-name=podaac/${build_info.service_name}"
+                                                    }
+                                                    success = true
+                                                } catch (Exception e) {
+                                                    retries++
+                                                    if (retries < maxRetries) {
+                                                        echo 'Synk monitor failed, retrying in 5 seconds...'
+                                                        sleep 5
+                                                    } else {
+                                                        error "Something is wrong with Synk monitor step."
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

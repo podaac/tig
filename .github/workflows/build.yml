@@ -295,6 +295,12 @@ jobs:
           zip -r ../tig-terraform-${{ env.new_version }}.zip *
 
       - name: Upload Release Artifacts
+        if: |
+          github.ref == 'refs/heads/main'    ||
+          github.ref == 'refs/heads/develop' ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
         uses: ncipollo/release-action@v1.12.0
         with:
           tag: ${{ env.new_version }}

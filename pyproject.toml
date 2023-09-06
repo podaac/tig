@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "podaac-tig"
-version = "0.6.1"
+version = "0.6.1-rc.2"
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"

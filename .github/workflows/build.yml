@@ -322,6 +322,7 @@ jobs:
       - name: Publish package distributions to PyPI Test
         id: pypi-test-publish
         if: |
+          github.ref == 'refs/heads/main'    ||
           github.ref == 'refs/heads/develop' ||
           startsWith(github.ref, 'refs/heads/release')
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -341,6 +342,7 @@ jobs:
       - name: Publish package distributions to PyPI
         id: pypi-publish
         if: |
+          github.ref == 'refs/heads/main'    ||
           github.ref == 'refs/heads/develop' ||
           startsWith(github.ref, 'refs/heads/release')
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -184,9 +184,9 @@ jobs:
       # These are gradle-specific steps for installing the application
       - name: Install Software
         run: |
-          pip install setuptools -U \
-          pip install pylint \
-          pip install pytest \
+          pip install setuptools -U
+          pip install pylint
+          pip install pytest
           poetry install
 
 
@@ -240,9 +240,8 @@ jobs:
       # This is where tests go
       - name: Run Poetry Tests
         run: |
-          poetry run pylint podaac \
-          poetry run flake8 podaac \
-          poetry run pytest --help \
+          poetry run pylint podaac
+          poetry run flake8 podaac
           poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=html -m "not aws and not integration" tests/
       # poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/
 
@@ -298,7 +297,7 @@ jobs:
       - name: Upload Release Artifacts
         uses: ncipollo/release-action@v1.12.0
         with:
-          tag: ${{ env.the_version }}
+          tag: ${{ env.new_version }}
           artifacts: "*.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
 

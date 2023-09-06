@@ -9,3 +9,7 @@ output "cloudwatch_tig_task_lambda_name" {
 output "tig_ecs_task_id" {
   value = aws_sfn_activity.tig_ecs_task.id
 }
+
+output "tig_task_cleaner_lambda_arn"{
+  value = aws_lambda_function.tig_cleaner_task.arn
+}

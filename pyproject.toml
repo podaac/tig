@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "podaac-tig"
-version = "0.5.0-alpha.3"
+version = "0.6.1-rc.1"
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"
@@ -17,7 +17,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.8"
 numpy = "^1.22.3"
-matplotlib = "3.5.1"
+matplotlib = "^3.5.1"
 netCDF4 = "^1.5.8"
 xarray = "^2022.3.0"
 imageio = "^2.16.1"

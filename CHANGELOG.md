@@ -14,6 +14,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.6.0]
+
+### Added
+- ** Issue-2 **
+  - Add lambda to clean up cma messages with descriptions
+  - Add in variable description for images generated
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## [0.5.0]
+
+### Added
+- **PODAAC-5277**
+  - Update tig to handle multipe lon and lats for different groups
+  - Update some python libraries for snyk and cma python
+- **PODAAC-5541**
+  - Replace spaces " " with "_" to handle group names with spaces
+  - Fixes collection AQUARIUS_L2_SSS_V5
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## [0.4.0]
 
 ### Added

@@ -68,7 +68,7 @@ jobs:
         run: |
           the_version=$(echo "${{ env.the_version }}" | sed -e "s/-alpha.*//g")
           the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
-          new_version="${the_version}-$(git rev-parse --short HEAD)"
+          new_version="${the_version}+$(git rev-parse --short HEAD)"
           echo "the_version=${new_version}" >> $GITHUB_ENV
           echo "software_version=${new_version}" >> $GITHUB_ENV
           echo "new_version=${new_version}" >> $GITHUB_ENV

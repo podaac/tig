@@ -21,10 +21,14 @@ RUN apt-get update && \
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
+COPY $DIST_PATH $DIST_PATH
+
 # install tig into working directory so we can call lambda
 #RUN pip3 install --force --target ${FUNCTION_DIR} $SOURCE
 
 RUN pip3 install --no-cache-dir --force --user --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target ${FUNCTION_DIR} $SOURCE
+
+RUN rm -rf $DIST_PATH
 
 # Install the function's dependencies
 RUN pip install \

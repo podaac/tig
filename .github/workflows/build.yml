@@ -415,7 +415,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=${{ env.the_version }}
+            type=semver,pattern={{raw}},value=${{ env.the_version }}
             type=raw,value=${{ env.THE_ENV }}
 
 

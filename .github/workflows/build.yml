@@ -69,6 +69,7 @@ jobs:
           the_version=$(echo "${{ env.the_version }}" | sed -e "s/-alpha.*//g")
           the_version=$(echo "$the_version" | sed -e "s/-rc.*//g")
           new_version="${the_version}-$(git rev-parse --short HEAD)"
+          echo "the_version=${new_version}" >> $GITHUB_ENV
           echo "software_version=${new_version}" >> $GITHUB_ENV
           echo "new_version=${new_version}" >> $GITHUB_ENV
           echo "Github REF: ${{ github.ref }}"
@@ -292,22 +293,23 @@ jobs:
           ls -al
           cd terraform
           ls -al
-          zip -r ../tig-terraform-${{ env.new_version }}.zip *
+          zip -r ../tig-terraform-${{ env.the_version }}.zip *
+
 
       - name: Upload Release Artifacts
         if: |
-          github.ref == 'refs/heads/main'    ||
           github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
           startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
         uses: ncipollo/release-action@v1.12.0
         with:
-          tag: ${{ env.new_version }}
+          tag: ${{ env.the_version }}
           artifacts: "*.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
-
-
+          body: "Version ${{ env.the_version }}"
 
 
       #########################################################################
@@ -324,18 +326,27 @@ jobs:
       #     poetry config repositories.testpypi https://test.pypi.org/legacy/
       #     poetry publish -r testpypi
 
-
-      - name: Publish package distributions to PyPI Test
+      - name: Publish to test.pypi.org
         id: pypi-test-publish
         if: |
-          github.ref == 'refs/heads/main'    ||
           github.ref == 'refs/heads/develop' ||
-          startsWith(github.ref, 'refs/heads/release')
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-  
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
+        env:
+          POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.TEST_PYPI_API_TOKEN}}
+        run: |
+          poetry config repositories.testpypi https://test.pypi.org/legacy/
+          poetry publish -r testpypi
+
+      - name: Publish to pypi.org
+        if: ${{ github.ref == 'refs/heads/main' }}
+        id: pypi-publish
+        env:
+          POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
+        run: |
+          poetry publish
 
       # - name: Publish to pypi.org
       #   if: ${{ github.ref == 'refs/heads/main' }}
@@ -345,15 +356,15 @@ jobs:
       #   run: |
       #     poetry publish
 
-      - name: Publish package distributions to PyPI
-        id: pypi-publish
-        if: |
-          github.ref == 'refs/heads/main'    ||
-          github.ref == 'refs/heads/develop' ||
-          startsWith(github.ref, 'refs/heads/release')
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      #- name: Publish package distributions to PyPI
+      #  id: pypi-publish
+      #  if: |
+      #    github.ref == 'refs/heads/main'    ||
+      #    github.ref == 'refs/heads/develop' ||
+      #    startsWith(github.ref, 'refs/heads/release')
+      #  uses: pypa/gh-action-pypi-publish@release/v1
+      #  with:
+      #    password: ${{ secrets.PYPI_API_TOKEN }}
 
       ## Due to observed delays between upload and availability, wait for the package to become available
       - name: Wait for package
@@ -380,10 +391,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+
       - name: Deploy Env Override
         if: |
           github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
         run: |
           message="${{ github.event.head_commit.message }}"
           trimmed_message=${message:1}  # Remove leading slash
@@ -391,6 +404,7 @@ jobs:
           override_env_upper=$(echo "$trimmed_message" | awk '{print toupper($NF)}')
           echo "THE_ENV=${override_env}" >> $GITHUB_ENV
           echo "TARGET_ENV_UPPERCASE=${override_env_upper}" >> $GITHUB_ENV
+
 
       - name: Extract metadata (tags, labels) for Docker
         if: |
@@ -404,10 +418,12 @@ jobs:
             type=semver,pattern={{version}},value=${{ env.the_version }}
             type=raw,value=${{ env.THE_ENV }}
 
+
       - name: Show meta outputs
         run: |
           echo "Tags: ${{ steps.meta.outputs.tags }}"
           echo "labels: ${{ steps.meta.outputs.labels }}"
+
 
       - name: Build and push Docker image
         if: |
@@ -415,7 +431,8 @@ jobs:
           github.ref == 'refs/heads/main'    ||
           startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -428,8 +445,8 @@ jobs:
             SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
 
-      ## Build and publish to ECR
-      - name: Upload Docker image to ECR
+      ## Build and publish to Service ECR
+      - name: Upload Docker image to Service ECR
         if: |
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main'    ||
@@ -447,6 +464,29 @@ jobs:
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
+
+
+      ## Build and publish to Cumulus ECR
+      - name: Upload Docker image to Cumulus ECR
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_CUMULUS_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_CUMULUS_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_CUMULUS_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ env.the_version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
+
 
       # #########################################################################
       # # Build and Publish Documentation
@@ -492,12 +532,12 @@ jobs:
           ls -al bin/
           which python3
           python3 --version
-          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.new_version }}/tig-terraform-${{ env.new_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.new_version }}
+          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.the_version }}/tig-terraform-${{ env.the_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.the_version }}
           ls -al
           echo "Show override contents"
           cat override.tf.json
           echo "End show override contents"
           terraform --version
           source bin/config.sh ${{ env.venue }}
-          terraform plan -var-file=tfvars/"${{ env.venue }}".tfvars -var="app_version=${{ env.new_version }}" -out="tfplan"
+          terraform plan -var-file=tfvars/"${{ env.venue }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
           terraform apply -auto-approve tfplan

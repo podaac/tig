@@ -502,7 +502,9 @@ jobs:
           pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          extra_build_args: --build-arg DIST_PATH="dist/" --build-arg SOURCE=${{ env.local_tig }}
+          build-args: |
+            DIST_PATH="dist/"
+            SOURCE=${{ env.local_tig }}
 
 
       ## Build and publish to Service ECR
@@ -520,7 +522,7 @@ jobs:
           tags: ${{ env.the_version }}
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
-          extra_build_args: --build-arg DIST_PATH="dist/= --build-arg SOURCE=${{ env.local_tig }}
+          extra_build_args: --build-arg DIST_PATH="dist/" --build-arg SOURCE=${{ env.local_tig }}
 
 
       ## Build and publish to Cumulus ECR
@@ -539,7 +541,7 @@ jobs:
           tags: ${{ env.the_version }}
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
-          extra_build_args: --build-arg DIST_PATH="dist/= --build-arg  SOURCE=${{ env.local_tig }}
+          extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
 
       # #########################################################################

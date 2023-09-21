@@ -420,6 +420,7 @@ jobs:
           tags: |
             type=semver,pattern={{raw}},value=${{ env.the_version }}
             type=raw,value=${{ env.THE_ENV }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
 
       - name: Show meta outputs

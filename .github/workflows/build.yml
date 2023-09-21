@@ -424,10 +424,11 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=${{ github.ref == 'refs/heads/main' }}
           tags: |
             type=semver,pattern={{raw}},value=${{ env.the_version }}
             type=raw,value=${{ env.TARGET_ENV_LOWERCASE }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
 
       - name: Show meta outputs

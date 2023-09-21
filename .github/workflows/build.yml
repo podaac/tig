@@ -310,7 +310,7 @@ jobs:
           artifacts: "*.zip"
           token: ${{ secrets.GITHUB_TOKEN }}
           body: "Version ${{ env.the_version }}"
-
+          makeLatest: ${{ github.ref == 'refs/heads/main' }}
 
       #########################################################################
       # Publish to pypi.org
@@ -419,7 +419,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{raw}},value=${{ env.the_version }}
-            type=raw,value=${{ env.THE_ENV }}
+            type=raw,value=${{ env.TARGET_ENV_UPPERCASE }}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
 

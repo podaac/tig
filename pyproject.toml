@@ -24,6 +24,7 @@ imageio = "^2.16.1"
 pygeogrids = "^0.4.1"
 cumulus-process = "^1.0.0"
 requests = "^2.27.1"
+click = "^8.1.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
@@ -36,6 +37,7 @@ mock = "^4.0.3"
 
 [tool.poetry.scripts]
 tig = 'podaac.tig.cli:main'
+generate_config = 'podaac.tig.generate_config:generate_config'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

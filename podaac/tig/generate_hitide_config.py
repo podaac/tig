@@ -84,7 +84,7 @@ def read_min_max_csv(filename):
 @click.option('--latitude', required=False, help='latitude variable', default="latitude")
 @click.option('--time', required=False, help='time variable', default="time")
 @click.option('--footprint-strategy', help='forge footprint strategy', required=False)
-def generate_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
+def generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
 
     dataset_config = {
         'shortName': dataset_id,
@@ -157,7 +157,7 @@ def generate_config(granule, dataset_id, include_image_variables, longitude, lat
 
 
 if __name__ == '__main__':
-    generate_config()
+    generate_hitide_config()
 
 # Example runs:
 # python gen_dataset_config.py -g SWOT_L2_LR_SSH_Basic_001_001_20160901T000000_20160901T005126_DG10_01.nc -d SWOT_L2_LR_SSH_BASIC_1.0 -i SWOT_L2_LR_SSH_BASIC_1.0.csv

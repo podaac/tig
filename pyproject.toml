@@ -37,7 +37,7 @@ mock = "^4.0.3"
 
 [tool.poetry.scripts]
 tig = 'podaac.tig.cli:main'
-generate_config = 'podaac.tig.generate_config:generate_config'
+generate_hitide_config = 'podaac.tig.generate_hitide_config:generate_hitide_config'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

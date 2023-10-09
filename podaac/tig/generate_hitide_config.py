@@ -1,7 +1,8 @@
-import click
-import xarray as xr
+"""Python script used to generate hitide config for forge and tig"""
+
 import json
 import csv
+import click
 import netCDF4 as nc
 
 # sample = {
@@ -47,12 +48,12 @@ import netCDF4 as nc
 #   ]
 # }
 
-# Function to recursively get variables with group paths
-
 
 def get_variables_with_paths(group, current_path=""):
+    """Function to recursively get variables with group paths"""
+
     variables_with_paths = []
-    for var_name, var_obj in group.variables.items():
+    for var_name, var_obj in group.variables.items():  # pylint: disable=unused-variable
         variable_path = current_path + "/" + var_name if current_path else var_name
         variables_with_paths.append(variable_path)
     for subgroup_name, subgroup in group.groups.items():
@@ -63,6 +64,8 @@ def get_variables_with_paths(group, current_path=""):
 
 
 def read_min_max_csv(filename):
+    """ Function to read csv with variables, min, max values """
+
     data = {}
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile)
@@ -85,6 +88,7 @@ def read_min_max_csv(filename):
 @click.option('--time', required=False, help='time variable', default="time")
 @click.option('--footprint-strategy', help='forge footprint strategy', required=False)
 def generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
+    """Function to generate hitide configuration"""
 
     dataset_config = {
         'shortName': dataset_id,
@@ -112,7 +116,7 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
     if include_image_variables:
         vars_min_max = read_min_max_csv(include_image_variables)
 
-    with nc.Dataset(granule, 'r') as dataset:
+    with nc.Dataset(granule, 'r') as dataset:  # pylint: disable=no-member
 
         data_var_names = get_variables_with_paths(dataset)
         dataset_config['variables'] = data_var_names
@@ -126,9 +130,9 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
                     long_name = variable.long_name if 'long_name' in variable.ncattrs() else ''
 
                     if data_var in vars_min_max:
-                        v = vars_min_max[data_var]
-                        min_val = float(v['min'])
-                        max_val = float(v['max'])
+                        min_max = vars_min_max[data_var]
+                        min_val = float(min_max['min'])
+                        max_val = float(min_max['max'])
                     else:
                         min_val = variable.valid_min if 'valid_min' in variable.ncattrs() else ''
                         max_val = variable.valid_max if 'valid_max' in variable.ncattrs() else ''
@@ -141,7 +145,8 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
                         'max': max_val,
                         'palette': 'paletteMedspirationIndexed'
                     })
-        except Exception as ex:
+
+        except Exception as ex:  # pylint: disable=broad-exception-caught
             print(f"Error: Failed on variable {data_var}, exception: " + str(ex))
 
     print(json.dumps(dataset_config, indent=4))
@@ -157,7 +162,7 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
 
 
 if __name__ == '__main__':
-    generate_hitide_config()
+    generate_hitide_config()  # pylint: disable=no-value-for-parameter
 
 # Example runs:
 # python gen_dataset_config.py -g SWOT_L2_LR_SSH_Basic_001_001_20160901T000000_20160901T005126_DG10_01.nc -d SWOT_L2_LR_SSH_BASIC_1.0 -i SWOT_L2_LR_SSH_BASIC_1.0.csv

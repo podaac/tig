@@ -311,6 +311,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           body: "Version ${{ env.the_version }}"
           makeLatest: "${{ github.ref == 'refs/heads/main' }}"
+          prerelease: "${{ github.ref != 'refs/heads/main' }}"
 
       #########################################################################
       # Publish to pypi.org

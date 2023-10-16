@@ -1,6 +1,6 @@
 ARG FUNCTION_DIR="/function"
 
-FROM python:3.8-slim as build-image
+FROM python:3.10-slim as build-image
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR

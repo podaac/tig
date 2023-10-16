@@ -604,7 +604,7 @@ jobs:
           ls -al bin/
           which python3
           python3 --version
-          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.the_version }}/tig-terraform-${{ env.the_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.the_version }}
+          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.the_version }}/tig-terraform-${{ env.the_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ steps.meta.outputs.version }}
           ls -al
           echo "Show override contents"
           cat override.tf.json

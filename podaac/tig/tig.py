@@ -582,8 +582,8 @@ class TIG():
                                                      nearest)
             output_vals[output_vals == fill_value] = np.nan
             out_array = np.flip(output_vals.flatten().reshape(rows, cols), 0)
-            #out_array = np.flip(output_vals.flatten().reshape(self.rows, self.cols), 0)
-            #out_array = output_vals
+            # out_array = np.flip(output_vals.flatten().reshape(self.rows, self.cols), 0)
+            # out_array = output_vals
             # Color the image output array and save to a file
             plt.imsave(output_location,
                        out_array,
@@ -658,7 +658,7 @@ class TIG():
 
         # Generate an array for output values
         print(fill_value)
-        #output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
+        # output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
         output_vals = np.memmap('large_array.dat', dtype=np.float64, mode='w+', shape=rows*cols)
         output_vals[:] = fill_value
 

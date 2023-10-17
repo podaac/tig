@@ -582,6 +582,8 @@ class TIG():
                                                      nearest)
             output_vals[output_vals == fill_value] = np.nan
             out_array = np.flip(output_vals.flatten().reshape(rows, cols), 0)
+            #out_array = np.flip(output_vals.flatten().reshape(self.rows, self.cols), 0)
+            #out_array = output_vals
             # Color the image output array and save to a file
             plt.imsave(output_location,
                        out_array,
@@ -643,8 +645,9 @@ class TIG():
         """
 
         # Generate a grid matching the output image
-        image_grid = grids.BasicGrid(self.get_lon_lat_grids(rows, cols)[0].flatten(),
-                                     self.get_lon_lat_grids(rows, cols)[1].flatten(),
+        lon_grid, lat_grid = self.get_lon_lat_grids(rows, cols)
+        image_grid = grids.BasicGrid(lon_grid.flatten(),
+                                     lat_grid.flatten(),
                                      shape=(rows, cols))
 
         # Generate a grid matching the dataset
@@ -654,7 +657,10 @@ class TIG():
         lut = data_grid.calc_lut(image_grid)
 
         # Generate an array for output values
-        output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
+        print(fill_value)
+        #output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
+        output_vals = np.memmap('large_array.dat', dtype=np.float64, mode='w+', shape=rows*cols)
+        output_vals[:] = fill_value
 
         # Use values nearest to grid cells within max_dist
         if nearest:
@@ -690,9 +696,11 @@ class TIG():
                         output_vals[idx] = (output_vals[idx] + val) / 2
                 # skip rare situations where we encounter nan location values
                 except IndexError:
+                    print("errors")
                     continue
 
         # Return output values
+        print(output_vals)
         return output_vals
 
 

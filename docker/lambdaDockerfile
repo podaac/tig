@@ -21,19 +21,14 @@ RUN apt-get update && \
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
-# Add artifactory as a trusted pip index
-#RUN mkdir $HOME/.pip
-#RUN echo "[global]" >> $HOME/.pip/pip.conf && \
-#    echo "index-url = https://cae-artifactory.jpl.nasa.gov/artifactory/api/pypi/pypi-release-virtual/simple" >> $HOME/.pip/pip.conf && \
-#    echo "trusted-host = cae-artifactory.jpl.nasa.gov maven.earthdata.nasa.gov pypi.org"  >> $HOME/.pip/pip.conf && \
-#    echo "extra-index-url = https://pypi.org/simple" >> $HOME/.pip/pip.conf
-
-# Install tig from artifactory
-
 COPY $DIST_PATH $DIST_PATH
 
 # install tig into working directory so we can call lambda
-RUN pip3 install --force --target ${FUNCTION_DIR} $SOURCE
+#RUN pip3 install --force --target ${FUNCTION_DIR} $SOURCE
+
+#RUN pip3 install --no-cache-dir --force --user --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target ${FUNCTION_DIR} $SOURCE
+
+RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target ${FUNCTION_DIR} $SOURCE
 
 RUN rm -rf $DIST_PATH
 

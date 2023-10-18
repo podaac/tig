@@ -568,7 +568,6 @@ class TIG():
             cols = override_cols
 
         if var.get('is_swot_expert') and var.get('id') == "ssha_karin_2":
-            print("swot expert ssha_karin_2")
             lon_array, lat_array, var_array = self.get_swot_expert_data(group_string)
 
         try:
@@ -657,7 +656,6 @@ class TIG():
         lut = data_grid.calc_lut(image_grid)
 
         # Generate an array for output values
-        print(fill_value)
         output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
         # output_vals = np.memmap('large_array.dat', dtype=np.float64, mode='w+', shape=rows*cols)
         # output_vals[:] = fill_value
@@ -696,11 +694,9 @@ class TIG():
                         output_vals[idx] = (output_vals[idx] + val) / 2
                 # skip rare situations where we encounter nan location values
                 except IndexError:
-                    print("errors")
                     continue
 
         # Return output values
-        print(output_vals)
         return output_vals
 
 

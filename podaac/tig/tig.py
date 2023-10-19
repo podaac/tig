@@ -657,8 +657,6 @@ class TIG():
 
         # Generate an array for output values
         output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
-        # output_vals = np.memmap('large_array.dat', dtype=np.float64, mode='w+', shape=rows*cols)
-        # output_vals[:] = fill_value
 
         # Use values nearest to grid cells within max_dist
         if nearest:

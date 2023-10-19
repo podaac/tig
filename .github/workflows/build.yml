@@ -260,12 +260,23 @@ jobs:
       #########################################################################
       # Publish new version numbers
       #########################################################################
-      - name: Commit Version Bump
-        # If building develop, a release branch, or main then we commit the version bump back to the repo
+      
+      - name: Quick check for changes
+        id: check_changes
         if: |
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main'    ||
           startsWith(github.ref, 'refs/heads/release')
+        run: |          
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes=true" >> $GITHUB_ENV               
+          else
+            echo "changes=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Commit Version Bump
+        # If building develop, a release branch, or main then we commit the version bump back to the repo
+        if: steps.check_changes.outputs.changes == 'true'
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
@@ -342,7 +353,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         id: pypi-publish
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
+          POETRY_PYPI_TOKEN_PYPI: ${{secrets.PYPI_API_TOKEN}}
         run: |
           poetry publish
 
@@ -613,3 +624,4 @@ jobs:
           source bin/config.sh ${{ env.TARGET_ENV_LOWERCASE }}
           terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
           terraform apply -auto-approve tfplan
+

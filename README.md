@@ -33,6 +33,19 @@ Use cli to test thumbnail image generation for a granule with configuration file
 tig --input_file <granule> --output_dir <output_dir> --config_file <config_file> --palette_dir <palette_dir>
 ```
 
+Use cli to create a tig configuration for collections 
+```
+generate_hitide_config --granule <granule_file> -dataset-id <collection short name> --include-image-variables <csv file image variables> --longitude <lon variable> --latitude <lat variable> --time <time variable> --footprint_strategy <footprint strategy>
+```
+
+granule: a sample granule file to generate the configuration for
+datset-id: collection short name 
+include-image-variables: csv file of with image variable names and min max setting for each variable
+longitude: longitude variable include the group if they're in group defaults to longitude
+latitude: latitude variable include the group if they're in a group defaults to latitude
+time: time variable include the group if they're in a group defaults to time
+footprint_strategy: strategy to generate footprint will default to None options should be ["periodic", "linestring", "polar", "swot_linestring", "polarsides", "smap"]
+
 
 ## How to load and use tig module
 Project using tig can include/use the tig as following:

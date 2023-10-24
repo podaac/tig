@@ -301,77 +301,82 @@ class TIG():
         return lon_array, lat_array
 
     def get_swot_expert_data(self, group):
-        """Function to get data for swot expert collection specifically for ssha_karin_2 data.
-        Divides data in to segments of 600 and there is approximately 9000 columns so we get
-        16 segments.
-        """
+        """Function to get data for swot expert collection specifically for ssha_karin_2 data."""
 
-        with xr.open_dataset(self.input_file, group=group, decode_times=False) as local_dataset:
+        local_dataset = xr.open_dataset(
+            self.input_file, group=group, decode_times=False)
+        flag = local_dataset.ancillary_surface_classification_flag
+        lon = local_dataset.longitude.values
+        lat = local_dataset.latitude.values
 
-            flag = local_dataset.ancillary_surface_classification_flag
-            lon = local_dataset.longitude.values
-            lat = local_dataset.latitude.values
-
-            cross_track_distance = local_dataset.cross_track_distance.values
-            ssha = local_dataset.ssha_karin_2
-            ssha = np.where(flag == 0, ssha, np.nan)
-            ssha_1 = ssha
+        cross_track_distance = local_dataset.cross_track_distance.values
+        ssha = local_dataset.ssha_karin_2
+        ssha_1 = np.where(flag == 0, ssha, np.nan)
+        local_dataset.close()
 
         lon_segments = []
         lat_segments = []
         data_segments = []
+        n_segments = 16
+        total_num_lines = local_dataset.num_lines.size
+        # make sure it is even
+        n_per_segment = int(np.ceil(total_num_lines / n_segments))//2*2
 
-        for n in range(16):
+        for n in range(n_segments):
 
-            if n == 15:
-                lon_modify = lon[n*600:, :]
-                lat_modify = lat[n*600:, :]
-                data_modify = ssha_1[n*600:, :]
-                new_distance = cross_track_distance[n*600:, :]
-            else:
-                lon_modify = lon[n*600:n*600+600, :]
-                lat_modify = lat[n*600:n*600+600, :]
-                data_modify = ssha_1[n*600:n*600+600, :]
-                new_distance = cross_track_distance[n*600:n*600+600, :]
-
-            mask_distance = np.nanmean(new_distance, axis=0)
-            msk = (np.abs(mask_distance) < 60e3) & (np.abs(mask_distance) > 10e3)
-            lon_modify[:, ~msk] = np.nan
-            lat_modify[:, ~msk] = np.nan
-
-            # first segmant more data
+            # add buffer to make sure we have enough data to fit
+            i0 = n*n_per_segment-n_per_segment//2
+            # add buffer to make sure we have enough data to fit
+            i1 = (n+1)*n_per_segment + n_per_segment//2
             if n == 0:
-                data_modify = ssha_1[n*600:n*600+800, :]
-                new_distance = cross_track_distance[n*600:n*600+800, :]
-            # last segmant more data
-            if n == 15:
-                indexes = (n * 600) - 200
-                data_modify = ssha_1[indexes:, :]
-                new_distance = cross_track_distance[indexes:, :]
+                i0 = 0
+            elif n == n_segments-1:
+                i1 = total_num_lines
+
+            data_modify = ssha_1[i0:i1, :]
+            new_distance = cross_track_distance[i0:i1, :]
 
             ssha_2 = fit_bias(
                 data_modify, new_distance,
                 check_bad_point_threshold=0.1,
-                remove_along_track_polynomial=True
+                remove_along_track_polynomial=False
             )
 
             mask_distance = np.nanmean(new_distance, axis=0)
-            msk = (np.abs(mask_distance) < 60e3) & (np.abs(mask_distance) > 10e3)
+            msk = (np.abs(mask_distance) < 60e3) & (
+                np.abs(mask_distance) > 10e3)
             ssha_2[:, ~msk] = np.nan
 
+            # make index to put the data back
+            ii0 = n*n_per_segment
+            ii1 = ii0+n_per_segment
+
+            if n == n_segments-1:
+                ii1 = total_num_lines
+
+            lon_modify = lon[ii0:ii1, :]
+            lat_modify = lat[ii0:ii1, :]
+
+            lon_modify[:, ~msk] = np.nan
+            lat_modify[:, ~msk] = np.nan
+
             if n == 0:
-                data_segments.append(ssha_2[0:600, :])
-            elif n == 15:
-                data_segments.append(ssha_2[200:, :])
+                data_segments.append(ssha_2[0:ii1, :])
+            elif n == n_segments-1:
+                data_segments.append(ssha_2[n_per_segment//2:, :])
             else:
-                data_segments.append(ssha_2)
+                data_segments.append(
+                    ssha_2[n_per_segment//2:n_per_segment+n_per_segment//2])
 
             lon_segments.append(lon_modify)
             lat_segments.append(lat_modify)
 
-        lon_array = np.concatenate([segment.flatten() for segment in lon_segments])
-        lat_array = np.concatenate([segment.flatten() for segment in lat_segments])
-        var_array = np.concatenate([segment.flatten() for segment in data_segments])
+        lon_array = np.concatenate([segment.flatten()
+                                   for segment in lon_segments])
+        lat_array = np.concatenate([segment.flatten()
+                                   for segment in lat_segments])
+        var_array = np.concatenate([segment.flatten()
+                                   for segment in data_segments])
 
         return lon_array, lat_array, var_array
 

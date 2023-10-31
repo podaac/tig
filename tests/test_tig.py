@@ -32,7 +32,7 @@ class TestTIG(unittest.TestCase):
     def tearDownClass(self):
         # Remove output directory and files
         shutil.rmtree(self.output_dir)
-        
+
     def test_image_generation_default(self):
         config_file = f'{self.config_dir}/PODAAC-CYGNS-C2H10.cfg'
         input_file = f'{self.input_dir}/cyg.ddmi.s20201031-000000-e20201031-235959.l2.surface-flux-cdr.a10.d10.nc'

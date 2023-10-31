@@ -355,6 +355,7 @@ class ImageGenerator(Process):
         processes = []
 
         var_list = [variables_config[:len(variables_config)//2], variables_config[len(variables_config)//2:]]
+        var_list = [variables_config]
 
         for variables in var_list:
             if variables:

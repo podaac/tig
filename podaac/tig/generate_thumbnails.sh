@@ -14,7 +14,7 @@
 #  3. Copy this script to each short name dir
 #  4. Copy file "example_vars.csv" (in repo root dir) to a file called "vars.csv" in each short name dir
 #  5. Update vars.csv file in each collection short name specifically for that collection (i.e. update var names and min/maxes)
-#  6. Download a "representative" .nc granule file for that collection short name and move it in each short name dir
+#  6. Download a "representative" .nc granule file for that collection short name and move it into each short name dir
 #  7. Update this script in each short name dir specifically for its collection short name (e.g. update input parameters)
 
 # Run Script

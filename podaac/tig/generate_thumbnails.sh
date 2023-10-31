@@ -7,16 +7,25 @@
 
 # HOW-TO Use
 #
-#   1. Create a directory in the tig root dir named "configs"
-#   2. Create directories under "configs" dir with the collection short name
-#   3. Copy this script to each short name dir
-#   4. Create a file called "vars.csv" in each short name dir and update specifically for that collection
-#   5. Download a "representative" granule for that collection short name and put it in each short name dir
-#   6. Update this script specifically for its collection short name (.e.g update input parameters)
-#   7. Change dir to the configs/<shortname> dir
-#   8. Run command "./generate_thumbnails.sh" to automatically generate the config, run tig, and open the thumbnails
-#   9. The collection <shortname>.cfg file will be saved in each short name dir
-#  10. Verify .cfg file and all thumbnails in each short name dir
+# Setup Collection Short Name Directories
+#
+#  1. Create a directory in the tig root dir named "configs"
+#  2. Create directories under "configs" dir with the collection short name
+#  3. Copy this script to each short name dir
+#  4. Copy file "example_vars.csv" (in repo root dir) to a file called "vars.csv" in each short name dir
+#  5. Update vars.csv file in each collection short name specifically for that collection (i.e. update var names and min/maxes)
+#  6. Download a "representative" granule for that collection short name and move it in each short name dir
+#  7. Update this script in each short name dir specifically for its collection short name (e.g. update input parameters)
+
+# Run Script
+#
+#  1. Change dir to the configs/<shortname> dir
+#  2. Run command "./generate_thumbnails.sh" to automatically generate the config, run tig, and open the thumbnails
+#  3. The collection <shortname>.cfg file will be saved in each short name dir
+#  4. Verify .cfg file and all thumbnail images in each short name dir
+#  5. Tweak var.csv or this script in short name dir if needed and re-run
+#
+#  NOTE: In rare cases, the generate_hitide_config.py file may need tweaking to generate a correct config file
 
 #  Publish config files to forge-tig-configuration repo
 #

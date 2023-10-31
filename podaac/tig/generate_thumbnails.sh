@@ -40,7 +40,7 @@ fi
 
 cd ../..
 
-poetry run generate_hitide_config -g configs/$collection/*.nc -d $collection -i configs/$collection/vars.csv  --latitude lat --longitude lon --time time --footprint-strategy periodic
+poetry run generate_hitide_config -g configs/$collection/*.nc -d $collection -i configs/$collection/vars.csv --latitude lat --longitude lon --time time --footprint-strategy periodic
 
 echo "Running tig to generate thumbnail images..."
 

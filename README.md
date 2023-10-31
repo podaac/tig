@@ -46,6 +46,10 @@ latitude: latitude variable include the group if they're in a group defaults to 
 time: time variable include the group if they're in a group defaults to time
 footprint_strategy: strategy to generate footprint will default to None options should be ["periodic", "linestring", "polar", "swot_linestring", "polarsides", "smap"]
 
+Use cli helper script to generate thumbnails for each collection
+```
+Go to dir `podaac/tig` and look at generate_thumbnails.sh script.  Follow directions at top to setup.
+```
 
 ## How to load and use tig module
 Project using tig can include/use the tig as following:

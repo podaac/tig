@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Prerequisites
+#
+# 1. Clone forge-tig-configuration into the parent dir of this repo
+# 2. Setup poetry and run poetry install
+
 # HOW-TO Use
 #
 #   1. Create a directory in the tig root dir named "configs"

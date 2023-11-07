@@ -3,14 +3,22 @@
 # Prerequisites
 #
 # 1. Clone forge-tig-configuration into the parent dir of this repo
-# 2. Setup poetry and run poetry install
+# 2. Install poetry using this: https://python-poetry.org/docs/#installation
+# 3. In a shell, cd to the tig root dir
+# 4. Make sure poetry is setup to use python less than 3.12.
+#    Run commands:
+#      poetry env list
+#      poetry env remove <env id>  (<< this is the environment id returned from 'poetry env list', need to remove only if it's version > 3.10)
+#      poetry env use python3.10
+# 5. Run command "poetry install"
 
 # HOW-TO Use
 #
 # Setup Collection Short Name Directories
 #
 #  1. Create a directory in the tig root dir named "configs"
-#  2. Create directories under "configs" dir with the collection short name
+#  2. For each collection, create a directory under "configs" dir with the collection short name
+#     e.g. in repo dir: configs/ASCATA_ESDR_L2_WIND_STRESS_V1.1
 #  3. Copy this script to each short name dir
 #  4. Copy file "example_vars.csv" (in repo root dir) to a file called "vars.csv" in each short name dir
 #  5. Update vars.csv file in each collection short name specifically for that collection (i.e. update var names and min/maxes)
@@ -30,8 +38,11 @@
 #  Publish config files to forge-tig-configuration repo
 #
 #  1. Copy each short name .cfg file to the forge-tig-configuration repo under "config-files"
-#  2. Commit the new cfg files in forge-tig-configuration to a new branch named "feature/<name>"
-#  3. Open a PR in forge-tig-configuration for this new branch
+#  2. Update the CHANGELOG.md in forge-tig-configuration listing your changes
+#  3. Commit and push the new updates in forge-tig-configuration to a new branch named "feature/<name>"
+#     NOTE: The <name> can be anything you want to describe the collection you are adding
+#  4. Open a PR in forge-tig-configuration for this new branch.
+#  5. In the PR, Include reviewers James Wood and Simon Liu
 
 collection=$(basename "$(pwd)")
 

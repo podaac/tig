@@ -3,7 +3,7 @@
 # Table of contents
 
 - [Overview](#overview)
-- [Install poetry](#install-poetry)
+- [Install poetry](#install-poetry-python-dependency-manager)
 - [Build](#build)
 - [How to load and use tig module](#how-to-load-and-use-tig-module)
   - [tig Input](#tig-input)

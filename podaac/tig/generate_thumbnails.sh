@@ -21,7 +21,7 @@
 #     e.g. in repo dir: configs/ASCATA_ESDR_L2_WIND_STRESS_V1.1
 #  3. Copy this script to each short name dir
 #  4. Copy file "example_vars.csv" (in repo root dir) to a file called "vars.csv" in each short name dir
-#  5. Update vars.csv file in each collection short name specifically for that collection (i.e. update var names and min/maxes)
+#  5. Update vars.csv file in each collection short name dir specifically for that collection (i.e. update var names and min/maxes)
 #  6. Download a "representative" .nc granule file for that collection short name and move it into each short name dir
 #  7. Update this script in each short name dir specifically for its collection short name
 #     e.g. Update the input variable names or paths:  --latitude lat  TO  --latitude data_01/ku/latitude
@@ -34,7 +34,7 @@
 #  1. Change dir to the configs/<shortname> dir
 #  2. Run command "./generate_thumbnails.sh" to automatically generate the config, run tig, and open the thumbnails
 #  3. The collection <shortname>.cfg file will be saved in each short name dir
-#  4. Verify .cfg file and all thumbnail images in each short name dir
+#  4. Verify <shortname>.cfg file and all thumbnail images in each short name dir
 #  5. Tweak var.csv or this script in short name dir if needed and re-run
 #
 #  NOTE: In rare cases, the generate_hitide_config.py file may need tweaking to generate a correct config file
@@ -45,8 +45,8 @@
 #  2. Update the CHANGELOG.md in forge-tig-configuration listing your changes
 #  3. Commit and push the new updates in forge-tig-configuration to a new branch named "feature/<name>"
 #     NOTE: The <name> can be anything you want to describe the collection you are adding
-#  4. Open a PR in forge-tig-configuration for this new branch.
-#  5. In the PR, Include reviewers James Wood and Simon Liu
+#  4. Open a PR in forge-tig-configuration for this new branch
+#  5. In the PR, include reviewers James Wood and Simon Liu, and let us know it's ready in Slack
 
 collection=$(basename "$(pwd)")
 

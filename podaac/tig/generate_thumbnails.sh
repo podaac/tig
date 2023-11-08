@@ -23,7 +23,11 @@
 #  4. Copy file "example_vars.csv" (in repo root dir) to a file called "vars.csv" in each short name dir
 #  5. Update vars.csv file in each collection short name specifically for that collection (i.e. update var names and min/maxes)
 #  6. Download a "representative" .nc granule file for that collection short name and move it into each short name dir
-#  7. Update this script in each short name dir specifically for its collection short name (e.g. update input parameters)
+#  7. Update this script in each short name dir specifically for its collection short name
+#     e.g. Update the input variable names or paths:  --latitude lat  TO  --latitude data_01/ku/latitude
+#     e.g. Remove time variable
+#     e.g. Change footprint-strategy parameter
+#     e.g. Change tig's palette-dir parameter
 
 # Run Script
 #

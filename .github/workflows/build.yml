@@ -269,9 +269,11 @@ jobs:
           startsWith(github.ref, 'refs/heads/release')
         run: |          
           if [ -n "$(git status --porcelain)" ]; then
-            echo "changes=true" >> $GITHUB_ENV               
+            echo "changes=true" >> $GITHUB_ENV
+            echo "::set-output name=changes::true"
           else
             echo "changes=false" >> $GITHUB_ENV
+            echo "::set-output name=changes::false"
           fi
       
       - name: Commit Version Bump

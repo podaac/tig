@@ -3,14 +3,22 @@
 # Table of contents
 
 - [Overview](#overview)
+- [Install poetry](#install-poetry-python-dependency-manager)
 - [Build](#build)
 - [How to load and use tig module](#how-to-load-and-use-tig-module)
   - [tig Input](#tig-input)
   - [tig Output](#tig-output)
+- [CLI Commands](#cli-commands)
 
 ## Overview
    tig is built to be used within Cumulus ecosystem.  It is depending on cumulus CMA ([Cumulus Documentation](https://nasa.github.io/cumulus)).
    Please refer to the [Usage](#usage) section for inputs and outputs. TIG itself is a lambda function which runs on top of CMA as its lambda layer.
+
+## Install poetry (python dependency manager)
+   Install poetry following the directions here: https://python-poetry.org/docs/#installation
+
+   - Be sure to install poetry in an isolated environment from the rest of your system.
+   - Be sure to use with a python version less than 3.12
 
 ## Build
 * Jenkins pipeline template is applied to this project.
@@ -26,13 +34,18 @@ Unit Test can be run using the command
 poetry run pytest
 ```
 
-## Cli
-Use cli to test thumbnail image generation for a granule with configuration file and palettes
+## CLI Commands
+- [Generate Thumbnails](#generate-thumbnails)
+- [Generate Config File](#generate-config-file)
+- [Run Tig](#run-tig)
 
+### Generate Thumbnails
+Use cli helper script to generate thumbnails for each collection (NOTE: This automatically generates the config file and runs tig)
 ```
-tig --input_file <granule> --output_dir <output_dir> --config_file <config_file> --palette_dir <palette_dir>
+Go to dir `podaac/tig` and look at generate_thumbnails.sh script.  Follow directions at top to setup.
 ```
 
+### Generate Config File
 Use cli to create a tig configuration for collections 
 ```
 generate_hitide_config --granule <granule_file> -dataset-id <collection short name> --include-image-variables <csv file image variables> --longitude <lon variable> --latitude <lat variable> --time <time variable> --footprint_strategy <footprint strategy>
@@ -46,9 +59,11 @@ latitude: latitude variable include the group if they're in a group defaults to 
 time: time variable include the group if they're in a group defaults to time
 footprint_strategy: strategy to generate footprint will default to None options should be ["periodic", "linestring", "polar", "swot_linestring", "polarsides", "smap"]
 
-Use cli helper script to generate thumbnails for each collection
+### Run Tig
+Use cli to test thumbnail image generation for a granule with configuration file and palettes
+
 ```
-Go to dir `podaac/tig` and look at generate_thumbnails.sh script.  Follow directions at top to setup.
+tig --input_file <granule> --output_dir <output_dir> --config_file <config_file> --palette_dir <palette_dir>
 ```
 
 ## How to load and use tig module

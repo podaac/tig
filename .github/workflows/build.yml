@@ -342,7 +342,9 @@ jobs:
         id: pypi-test-publish
         if: |
           github.ref == 'refs/heads/develop' ||
-          startsWith(github.ref, 'refs/heads/release')
+          startsWith(github.ref, 'refs/heads/release') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
         env:
           POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.TEST_PYPI_API_TOKEN}}
         run: |

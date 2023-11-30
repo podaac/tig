@@ -262,7 +262,7 @@ class TIG():
         exact_lats = lats[:rows]
 
         lon_grid, lat_grid = np.meshgrid(exact_lons, exact_lats)
-        return(lon_grid, lat_grid)
+        return (lon_grid, lat_grid)
 
     def get_lon_lat(self, param_group=None):
         """

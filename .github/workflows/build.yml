@@ -26,8 +26,8 @@ jobs:
       # NOTE: This step is platform-specific
       # Checks out this repository and sets up the build/test environment with 
       # gradle
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Install Poetry
@@ -504,6 +504,25 @@ jobs:
           extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
 
+      ## Build and publish to SWOT Cumulus ECR
+      - name: Upload Docker image to Cumulus ECR
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release')
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ env.the_version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
+
+
     ## Local tig docker builds
 
       - name: Get Local Tig Build
@@ -514,7 +533,6 @@ jobs:
         run: |
           local_tig=$(find dist -type f -name "*.whl")
           echo "local_tig=${local_tig}" >> $GITHUB_ENV
-
 
       - name: Build Local TIG and push Docker image
         if: |
@@ -533,7 +551,6 @@ jobs:
             DIST_PATH="dist/"
             SOURCE=${{ env.local_tig }}
 
-
       ## Build and publish to Service ECR
       - name: Upload Local TIG Docker image to Service ECR
         if: |
@@ -550,7 +567,6 @@ jobs:
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg DIST_PATH="dist/" --build-arg SOURCE=${{ env.local_tig }}
-
 
       ## Build and publish to Cumulus ECR
       - name: Upload Local TIG Docker image to Cumulus ECR
@@ -570,6 +586,23 @@ jobs:
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
+      ## Build and publish to SWOT Cumulus ECR
+      - name: Upload Local TIG Docker image to Cumulus ECR
+        if: |
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ steps.meta.outputs.version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
       # #########################################################################
       # # Build and Publish Documentation

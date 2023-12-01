@@ -79,14 +79,6 @@ def read_min_max_csv(filename):
     return data
 
 
-@click.command()
-@click.option('-g', '--granule', help='Sample granule file', required=True)
-@click.option('-d', '--dataset-id', help='Collection short name', required=True)
-@click.option('-i', '--include-image-variables', help='CSV file with variables, min, max settings', required=False)
-@click.option('--longitude', required=False, help='longitude variable', default="longitude")
-@click.option('--latitude', required=False, help='latitude variable', default="latitude")
-@click.option('--time', required=False, help='time variable', default="time")
-@click.option('--footprint-strategy', help='forge footprint strategy', required=False)
 def generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
     """Function to generate hitide configuration"""
 
@@ -161,8 +153,22 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
     return dataset_config
 
 
+@click.command()
+@click.option('-g', '--granule', help='Sample granule file', required=True)
+@click.option('-d', '--dataset-id', help='Collection short name', required=True)
+@click.option('-i', '--include-image-variables', help='CSV file with variables, min, max settings', required=False)
+@click.option('--longitude', required=False, help='longitude variable', default="longitude")
+@click.option('--latitude', required=False, help='latitude variable', default="latitude")
+@click.option('--time', required=False, help='time variable', default="time")
+@click.option('--footprint-strategy', help='forge footprint strategy', required=False)
+def generate_hitide_config_command(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
+    """Command call to generate config"""
+
+    generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy)
+
+
 if __name__ == '__main__':
-    generate_hitide_config()  # pylint: disable=no-value-for-parameter
+    generate_hitide_config_command()  # pylint: disable=no-value-for-parameter
 
 # Example runs:
 # python gen_dataset_config.py -g SWOT_L2_LR_SSH_Basic_001_001_20160901T000000_20160901T005126_DG10_01.nc -d SWOT_L2_LR_SSH_BASIC_1.0 -i SWOT_L2_LR_SSH_BASIC_1.0.csv

@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ** Add Hitide Generate Configuration **
   - [issue/26](https://github.com/podaac/tig/issues/26): Added cli command to generate hitide configurations for tig/forge
 - ** Added in swot expert image generation **
-  - [issue/18] (https://github.com/podaac/hitide/issues/18): Added in code to generate ssha_karin_2 in swot expert 
+  - [issue/18] (https://github.com/podaac/hitide/issues/18): Added in code to generate ssha_karin_2 in swot expert
+- ** Upgrade to support Cumulus 16 **
+  - [issue/29] (https://github.com/podaac/hitide/issues/29): Upgrade to support cumulus 16
 ### Changed
 ### Deprecated
 ### Removed

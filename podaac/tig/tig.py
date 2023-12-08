@@ -439,19 +439,9 @@ class TIG():
         lon_array, lat_array = self.get_lon_lat(param_group=group)
 
         # Get Bounds of the dataset
-        eastern = lon_array.max()
-        western = lon_array.min()
         northern = lat_array.max()
         southern = lat_array.min()
-
-        # Calculate output dimensions
-        if not self.crosses_antimeridian(lon_array):
-            self.logger.debug("Region does not crosses 180/-180")
-            region = (southern, northern, western, eastern)
-        else:
-            # Image spans antimeridian, wrap it.
-            self.logger.debug("Region crosses 180/-180")
-            region = (southern, northern, -180, 180)
+        region = (southern, northern, -180, 180)
         self.logger.info("region: %s", str(region))
         height_deg = region[1] - region[0]
         width_deg = region[3] - region[2]

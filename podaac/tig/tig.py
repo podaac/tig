@@ -228,6 +228,7 @@ class TIG():
         bool
             True if data crosses antimeridian.
         """
+        return True
         if len(lons.shape) == 1:
             if self._crosses(lons):
                 return True

@@ -505,7 +505,7 @@ jobs:
 
 
       ## Build and publish to SWOT Cumulus ECR
-      - name: Upload Docker image to Cumulus ECR
+      - name: Upload Docker image to SWOT Cumulus ECR
         if: |
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main'    ||
@@ -587,7 +587,7 @@ jobs:
           extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
       ## Build and publish to SWOT Cumulus ECR
-      - name: Upload Local TIG Docker image to Cumulus ECR
+      - name: Upload Local TIG Docker image to SWOT Cumulus ECR
         if: |
           github.event.head_commit.message == '/deploy sit' ||
           github.event.head_commit.message == '/deploy uat' ||

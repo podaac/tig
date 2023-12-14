@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "podaac-tig"
-version = "0.7.0"
+version = "0.8.0-rc.4"
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"
@@ -15,27 +15,33 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.10, <3.13"
 numpy = "^1.22.3"
 matplotlib = "^3.5.1"
 netCDF4 = "^1.5.8"
-xarray = "^2022.3.0"
+xarray = "^2023.11.0"
 imageio = "^2.16.1"
-pygeogrids = "^0.4.1"
-cumulus-process = "^1.0.0"
+pygeogrids = "^0.5.0"
+cumulus-process = "^1.3.0"
 requests = "^2.27.1"
+click = "^8.1.7"
+scipy = "^1.11.3"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.1"
-flake8 = "^4.0.1"
+pytest = "^7.4.3"
+flake8 = "^6.1.0"
 pytest-cov = "^3.0.0"
-pylint = "^2.13.5"
+pylint = "^3.0.2"
 Sphinx = "^4.5.0"
-moto = "^3.1.4"
-mock = "^4.0.3"
+moto = "^4.2.5"
+mock = "^5.1.0"
 
 [tool.poetry.scripts]
 tig = 'podaac.tig.cli:main'
+generate_hitide_config = 'podaac.tig.generate_hitide_config:generate_hitide_config_command'
+
+[tool.poetry.group.dev.dependencies]
+scikit-image = "^0.22.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

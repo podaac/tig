@@ -17,7 +17,7 @@ variable "profile" {
 
 variable "cma_version" {
   type    = string
-  default = "v1.3.0"
+  default = "v2.0.3"
 }
 
 variable "app_name" {

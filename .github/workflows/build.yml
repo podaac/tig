@@ -26,10 +26,10 @@ jobs:
       # NOTE: This step is platform-specific
       # Checks out this repository and sets up the build/test environment with 
       # gradle
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: '3.10'
       - name: Install Poetry
         uses: abatilo/actions-poetry@v2.0.0
         with:
@@ -269,9 +269,11 @@ jobs:
           startsWith(github.ref, 'refs/heads/release')
         run: |          
           if [ -n "$(git status --porcelain)" ]; then
-            echo "changes=true" >> $GITHUB_ENV               
+            echo "changes=true" >> $GITHUB_ENV
+            echo "::set-output name=changes::true"
           else
             echo "changes=false" >> $GITHUB_ENV
+            echo "::set-output name=changes::false"
           fi
       
       - name: Commit Version Bump
@@ -397,7 +399,7 @@ jobs:
           github.event.head_commit.message == '/deploy sit' ||
           github.event.head_commit.message == '/deploy uat' ||
           github.event.head_commit.message == '/deploy sandbox'
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -504,6 +506,25 @@ jobs:
           extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
 
 
+      ## Build and publish to SWOT Cumulus ECR
+      - name: Upload Docker image to Cumulus ECR
+        if: |
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release')
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ env.the_version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: --build-arg SOURCE=${{ env.pyproject_name }}==${{ env.the_version }}
+
+
     ## Local tig docker builds
 
       - name: Get Local Tig Build
@@ -514,7 +535,6 @@ jobs:
         run: |
           local_tig=$(find dist -type f -name "*.whl")
           echo "local_tig=${local_tig}" >> $GITHUB_ENV
-
 
       - name: Build Local TIG and push Docker image
         if: |
@@ -533,7 +553,6 @@ jobs:
             DIST_PATH="dist/"
             SOURCE=${{ env.local_tig }}
 
-
       ## Build and publish to Service ECR
       - name: Upload Local TIG Docker image to Service ECR
         if: |
@@ -546,11 +565,10 @@ jobs:
           account_id: ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
           repo: podaac/tig
           region: us-west-2
-          tags: ${{ env.the_version }}
+          tags: ${{ steps.meta.outputs.version }}
           create_repo: true
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg DIST_PATH="dist/" --build-arg SOURCE=${{ env.local_tig }}
-
 
       ## Build and publish to Cumulus ECR
       - name: Upload Local TIG Docker image to Cumulus ECR
@@ -570,6 +588,23 @@ jobs:
           dockerfile: ./docker/lambdaDockerfile
           extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
+      ## Build and publish to SWOT Cumulus ECR
+      - name: Upload Local TIG Docker image to Cumulus ECR
+        if: |
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat' ||
+          github.event.head_commit.message == '/deploy sandbox'
+        uses: vitr/actions-build-and-upload-to-ecs@master
+        with:
+          access_key_id: ${{ secrets[format('AWS_ACCESS_KEY_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          secret_access_key: ${{ secrets[format('AWS_SECRET_ACCESS_KEY_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          account_id: ${{ secrets[format('AWS_ACCOUNT_ID_CUMULUS_SWOT_{0}', env.TARGET_ENV_UPPERCASE)] }}
+          repo: podaac/tig
+          region: us-west-2
+          tags: ${{ steps.meta.outputs.version }}
+          create_repo: true
+          dockerfile: ./docker/lambdaDockerfile
+          extra_build_args: --build-arg DIST_PATH="dist/" --build-arg  SOURCE=${{ env.local_tig }}
 
       # #########################################################################
       # # Build and Publish Documentation
@@ -615,12 +650,13 @@ jobs:
           ls -al bin/
           which python3
           python3 --version
-          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.the_version }}/tig-terraform-${{ env.the_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ env.the_version }}
+          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.the_version }}/tig-terraform-${{ env.the_version }}.zip ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}.dkr.ecr.us-west-2.amazonaws.com/podaac/tig:${{ steps.meta.outputs.version }}
           ls -al
           echo "Show override contents"
           cat override.tf.json
           echo "End show override contents"
           terraform --version
-          source bin/config.sh ${{ env.venue }}
-          terraform plan -var-file=tfvars/"${{ env.venue }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
+          source bin/config.sh ${{ env.TARGET_ENV_LOWERCASE }}
+          terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
           terraform apply -auto-approve tfplan
+

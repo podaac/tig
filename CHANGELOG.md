@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+
+## [0.8.0]
+
+### Added
 - ** Add Hitide Generate Configuration **
   - [issue/26](https://github.com/podaac/tig/issues/26): Added cli command to generate hitide configurations for tig/forge
 - ** Added in swot expert image generation **

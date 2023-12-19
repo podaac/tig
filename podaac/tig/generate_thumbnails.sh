@@ -25,7 +25,7 @@
 #  6. Download a "representative" .nc granule file for that collection short name and move it into each short name dir
 #  7. Update this script in each short name dir specifically for its collection short name
 #     e.g. Update the input variable names or paths:  --latitude lat  TO  --latitude data_01/ku/latitude
-#     e.g. Remove time variable
+#     e.g. Remove --time argument if the collection doesn't have a time dimension (i.e. it will just default to "time" but won't be used)
 #     e.g. Change footprint-strategy parameter
 #     e.g. Change tig's palette-dir parameter
 

@@ -9,6 +9,11 @@ variable image{
   type = string
 }
 
+variable lambda_container_image_uri{
+  description = "public image url"
+  type = string
+}
+
 variable role{
   description = "role for lambda"
   type = string

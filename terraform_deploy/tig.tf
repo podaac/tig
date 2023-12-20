@@ -2,7 +2,7 @@ module "tig" {
   source = "source will be override by override.py"
   // Lambda variables
   prefix = var.prefix
-  image = "image will be override by override.py"
+  lambda_container_image_uri = "image will be override by override.py"
   role = aws_iam_role.iam_execution.arn
   cmr_environment = "UAT"
   subnet_ids = []

@@ -18,7 +18,7 @@ module "tig_service" {
   tags                                  = merge(var.tags, { Project = var.prefix })
   cluster_arn                           = var.cluster_arn
   desired_count                         = var.desired_count
-  image                                 = var.image
+  image                                 = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   log_destination_arn                   = var.log_destination_arn
   cpu                                   = var.ecs_cpu
   memory_reservation                    = var.ecs_memory_reservation

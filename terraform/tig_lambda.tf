@@ -5,7 +5,7 @@ locals {
 
 resource "aws_lambda_function" "tig_task" {
   function_name = "${local.lambda_resources_name}-lambda"
-  image_uri     = var.image
+  image_uri     = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   role          = var.role
   timeout       = var.timeout
   memory_size   = var.memory_size

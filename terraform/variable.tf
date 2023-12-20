@@ -6,6 +6,7 @@ variable app_name{
 
 variable image{
   description = "ECR image arn"
+  default = ""
   type = string
 }
 

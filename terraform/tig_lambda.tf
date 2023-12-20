@@ -4,6 +4,11 @@ locals {
 }
 
 resource "aws_lambda_function" "tig_task" {
+
+  depends_on = [
+    null_resource.upload_ecr_image
+  ]
+
   function_name = "${local.lambda_resources_name}-lambda"
   image_uri     = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   role          = var.role
@@ -45,8 +50,13 @@ resource "aws_cloudwatch_log_group" "tig_task" {
 
 
 resource "aws_lambda_function" "tig_cleaner_task" {
+
+  depends_on = [
+    null_resource.upload_ecr_image
+  ]
+  
   function_name = "${local.lambda_resources_name}-lambda-cleaner"
-  image_uri     = var.image
+  image_uri     = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   role          = var.role
   timeout       = var.timeout
   memory_size   = var.memory_size

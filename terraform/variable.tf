@@ -339,3 +339,8 @@ variable "scale_down_step_adjustment" {
     }
   ]
 }
+
+variable architectures {
+  default = ["x86_64"]
+  type = list
+}

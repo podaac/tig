@@ -41,13 +41,13 @@ variable command{
 variable entry_point{
   description = "Entry point for docker container"
   type = list(string)
-  default = ["/usr/local/bin/python", "-m", "awslambdaric"]
+  default = ["/var/lang/bin/python", "-m", "awslambdaric"]
 }
 
 variable working_directory{
   description = "Working directory for docker container"
   type = string
-  default = "/function"
+  default = "/var/task"
 }
 
 variable cmr_environment{

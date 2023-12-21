@@ -7,8 +7,11 @@ ARG SOURCE
 
 RUN yum -q -y install gcc
 
-# Install tig from artifactory
+# Create function directory
+RUN mkdir -p ${FUNCTION_DIR}
+WORKDIR ${FUNCTION_DIR}
 
+# Install tig from artifactory
 COPY $DIST_PATH $DIST_PATH
 
 # install tig into working directory so we can call lambda

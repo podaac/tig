@@ -8,14 +8,14 @@ ARG SOURCE
 RUN yum -q -y install gcc
 
 # Create function directory
-RUN mkdir -p ${FUNCTION_DIR}
-WORKDIR ${FUNCTION_DIR}
+# RUN mkdir -p ${FUNCTION_DIR}
+# WORKDIR ${FUNCTION_DIR}
 
 # Install tig from artifactory
 COPY $DIST_PATH $DIST_PATH
 
 # install tig into working directory so we can call lambda
-RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target ${FUNCTION_DIR} $SOURCE
+RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target "${LAMBDA_TASK_ROOT}" $SOURCE
 
 RUN rm -rf $DIST_PATH
 

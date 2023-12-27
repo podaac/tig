@@ -9,15 +9,15 @@ module "tig_fargate" {
   tags = var.tags
   iam_role = var.fargate_iam_role
   command = [
-    "/usr/local/bin/python",
-    "/function/podaac/lambda_handler/lambda_handler.py",
+    "/var/lang/bin/python",
+    "/var/task//podaac/lambda_handler/lambda_handler.py",
     "activity",
     "--arn",
     aws_sfn_activity.tig_ecs_task.id
   ]
 
   environment = {
-    "PYTHONPATH": ":/function",
+    "PYTHONPATH": ":/var/task",
     "CONFIG_BUCKET": "${var.prefix}-internal",
     "CONFIG_DIR" : var.config_dir,
     "CONFIG_URL" : var.config_url,

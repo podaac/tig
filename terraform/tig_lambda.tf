@@ -16,6 +16,8 @@ resource "aws_lambda_function" "tig_task" {
   memory_size   = var.memory_size
   package_type  = "Image"
   
+  architectures = var.architectures
+
   image_config {
     command = var.command
     entry_point = var.entry_point

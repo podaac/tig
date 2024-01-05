@@ -5,8 +5,6 @@ tig.py
 
 Main module for the Tool for Image Generation (TIG)
 """
-# pylint: disable=invalid-name
-
 import os
 import logging
 import json
@@ -17,167 +15,9 @@ import numpy as np
 import numpy.ma as ma
 import xarray as xr
 import pygeogrids.grids as grids
-from scipy.optimize import leastsq
 
 # One degree in meters
 DEG_M = 111319.490793274
-
-
-def distance_between_points(lon0, lons, lat0, lats):
-    """
-    Calculate the distance between two points on the Earth's surface
-    using the haversine formula.
-
-    Parameters:
-    lon0 (float): The longitude of the first point in decimal degrees
-    lons (float): The longitudes of the second point(s) in decimal degrees.
-                  This can be a single value or an array-like object.
-    lat0 (float): The latitude of the first point in decimal degrees
-    lats (float): The latitudes of the second point(s) in decimal degrees.
-                  This can be a single value or an array-like object.
-
-    Returns:
-    float or numpy.ndarray: The distance(s) between the two points in meters.
-
-    """
-
-    # Convert latitude and longitude to spherical coordinates in radians.
-    degrees_to_radians = np.pi/180.0
-
-    # phi = 90 - latitude
-    phi1 = lat0*degrees_to_radians
-    phi2 = lats*degrees_to_radians
-    dphi = phi1-phi2
-
-    # theta = longitude
-    theta1 = lon0*degrees_to_radians
-    theta2 = lons*degrees_to_radians
-    dtheta = theta1-theta2
-
-    # The haversine formula
-    co = np.sqrt(np.sin(dphi/2)**2 + np.cos(phi1)*np.cos(phi2)*np.sin(dtheta/2.0)**2)
-    arc = 2 * np.arcsin(co)
-    dist = arc*6371.0e3
-
-    return dist
-
-
-def fit_bias(ssh, cross_track_distance,
-             order=2,
-             iter_max=20,
-             remove_along_track_polynomial=False,
-             check_bad_point_threshold=0.6):
-    """
-    Parameters
-    ----------
-    ssh : xarray.DataArray
-        A 2D array of SSH data.
-    cross_track_distance : xarray.DataArray
-        A 2D array of cross-track distances
-    order : int, optional
-        Order of the polynomial to fit to the phase bias, by default 2.
-    remove_along_track_polynomial : bool, optional
-        Flag to remove the along-track polynomial from the SSH data, by default False.
-    check_bad_point_threshold : float, optional
-        Threshold for checking the percentage of bad points,
-        larger than which the fitting will be skipped, by default 0.6.
-
-    The two arrays must have the same shape. Missing values are filled with NaNs.
-
-    Returns
-    -------
-    xarray.DataArray
-        A 2D array of the phase bias.
-
-    """
-
-    def err(cc, x0, p, order):  # pylint: disable=inconsistent-return-statements
-        if order == 2:
-            a, b, c = cc
-            return p - (a + b*x0 + c*x0**2)
-        if order == 3:
-            a, b, c, d = cc
-            return p - (a + b*x0 + c*x0**2 + d*x0**3)
-
-    def get_anomaly(ssha, distance, order):
-        msk = np.isfinite(ssha.flatten())
-        if msk.sum() < ssha.size*check_bad_point_threshold:
-            return np.zeros_like(ssha)
-        x = distance
-        xf = x.flatten()[msk]
-        pf = ssha.flatten()[msk]
-
-        cc = [0.0]*(order+1)
-        coef = leastsq(err, cc, args=(xf, pf, order))[0]
-        anomaly = err(coef, x, ssha, order)
-
-        return anomaly
-
-    cdis = np.nanmean(cross_track_distance, axis=0)/1e3
-
-    m1 = cdis > 0
-    m2 = cdis < 0
-
-    ano = np.where(np.isfinite(ssh), np.zeros((ssh.shape)), np.nan)
-    ano[:, m1] = get_anomaly(ssh[:, m1], cross_track_distance[:, m1], order)
-    ano[:, m2] = get_anomaly(ssh[:, m2], cross_track_distance[:, m2], order)
-
-    for i in range(iter_max//2):  # pylint: disable=unused-variable
-        ano[:, m1] = get_anomaly(ano[:, m1], cross_track_distance[:, m1], order)
-        ano[:, m2] = get_anomaly(ano[:, m2], cross_track_distance[:, m2], order)
-        # ano = np.where(np.abs(ano)>6*np.nanstd(ano),np.nan,ano)
-    for i in range(iter_max//2):
-        ano[:, m1] = get_anomaly(ano[:, m1], cross_track_distance[:, m1], order)
-        ano[:, m2] = get_anomaly(ano[:, m2], cross_track_distance[:, m2], order)
-        ano = np.where(np.abs(ano-np.nanmean(ano)) > 5*np.nanstd(ano), np.nan, ano)
-
-    ano = np.where(np.isnan(ssh), np.nan, ano)
-    # mm = m1|m2
-    # ano[:,~mm]=np.nan
-
-    if remove_along_track_polynomial:
-        y = np.arange(ssh.shape[0])[:, np.newaxis]*np.ones_like(ssh)
-        ano = fit_along_track_polynomial(y, ano)
-
-    return ano
-
-
-def fit_along_track_polynomial(y, din):
-    """
-    Computes the best-fit 2D surface of the form
-    p = a + by + cy^2 + d y^3
-
-    The best-fit surface is determined by minimizing the sum
-    of squared residuals between the functional surface and the input data.
-
-    Parameters
-    ----------
-    y : numpy.ndarray
-        A 2D array or a list of y-coordinates.
-    p : numpy.ndarray
-        A 2D array or a list of data values on (y) grid.
-
-    Returns
-
-
-    """
-
-    def err(cc, y0, p):
-        a, b, c, d, e = cc
-        return p - (a + b*y0 + c*y0**2 + d*y0**3+e*y0**4)
-
-    msk = np.isfinite(din.flatten())
-    if msk.sum() < din.size/3:
-        return np.zeros_like(din)*np.nan
-    yf = y.flatten()[msk]
-    dd = din.flatten()[msk]
-    cc = [1e-4, 1e-6, 1e-10, 1e-10, 1e-10]
-
-    coef = leastsq(err, cc, args=(yf, dd))[0]
-
-    anomaly = err(coef, y, din)  # mean surface
-
-    return anomaly
 
 
 class TIG():
@@ -245,7 +85,7 @@ class TIG():
                 return True
         return False
 
-    def get_lon_lat_grids(self, rows, cols):
+    def get_lon_lat_grids(self):
         """
         Returns longitude and latitude grids based on extents and specified number of rows and cols
         Returns
@@ -253,16 +93,15 @@ class TIG():
         tuple
             Tuple containing a lon_grid and lat_grid
         """
-
-        lons = np.arange(self.region.min_lon, self.region.max_lon, (self.region.max_lon-self.region.min_lon)/cols)
-        lats = np.arange(self.region.min_lat, self.region.max_lat, (self.region.max_lat-self.region.min_lat)/rows)
+        lons = np.arange(self.region.min_lon, self.region.max_lon, (self.region.max_lon-self.region.min_lon)/self.cols)
+        lats = np.arange(self.region.min_lat, self.region.max_lat, (self.region.max_lat-self.region.min_lat)/self.rows)
 
         # arrage function can create an array slightly larger than cols and rows so we want to cut it
-        exact_lons = lons[:cols]
-        exact_lats = lats[:rows]
+        exact_lons = lons[:self.cols]
+        exact_lats = lats[:self.rows]
 
         lon_grid, lat_grid = np.meshgrid(exact_lons, exact_lats)
-        return (lon_grid, lat_grid)
+        return(lon_grid, lat_grid)
 
     def get_lon_lat(self, param_group=None):
         """
@@ -299,86 +138,6 @@ class TIG():
 
         local_dataset.close()
         return lon_array, lat_array
-
-    def get_swot_expert_data(self, group):
-        """Function to get data for swot expert collection specifically for ssha_karin_2 data."""
-
-        local_dataset = xr.open_dataset(
-            self.input_file, group=group, decode_times=False)
-        flag = local_dataset.ancillary_surface_classification_flag
-        lon = local_dataset.longitude.values
-        lat = local_dataset.latitude.values
-
-        cross_track_distance = local_dataset.cross_track_distance.values
-        ssha = local_dataset.ssha_karin_2
-        ssha_1 = np.where(flag == 0, ssha, np.nan)
-        local_dataset.close()
-
-        lon_segments = []
-        lat_segments = []
-        data_segments = []
-        n_segments = 16
-        total_num_lines = local_dataset.num_lines.size
-        # make sure it is even
-        n_per_segment = int(np.ceil(total_num_lines / n_segments))//2*2
-
-        for n in range(n_segments):
-
-            # add buffer to make sure we have enough data to fit
-            i0 = n*n_per_segment-n_per_segment//2
-            # add buffer to make sure we have enough data to fit
-            i1 = (n+1)*n_per_segment + n_per_segment//2
-            if n == 0:
-                i0 = 0
-            elif n == n_segments-1:
-                i1 = total_num_lines
-
-            data_modify = ssha_1[i0:i1, :]
-            new_distance = cross_track_distance[i0:i1, :]
-
-            ssha_2 = fit_bias(
-                data_modify, new_distance,
-                check_bad_point_threshold=0.1,
-                remove_along_track_polynomial=False
-            )
-
-            mask_distance = np.nanmean(new_distance, axis=0)
-            msk = (np.abs(mask_distance) < 60e3) & (
-                np.abs(mask_distance) > 10e3)
-            ssha_2[:, ~msk] = np.nan
-
-            # make index to put the data back
-            ii0 = n*n_per_segment
-            ii1 = ii0+n_per_segment
-
-            if n == n_segments-1:
-                ii1 = total_num_lines
-
-            lon_modify = lon[ii0:ii1, :]
-            lat_modify = lat[ii0:ii1, :]
-
-            lon_modify[:, ~msk] = np.nan
-            lat_modify[:, ~msk] = np.nan
-
-            if n == 0:
-                data_segments.append(ssha_2[0:ii1, :])
-            elif n == n_segments-1:
-                data_segments.append(ssha_2[n_per_segment//2:, :])
-            else:
-                data_segments.append(
-                    ssha_2[n_per_segment//2:n_per_segment+n_per_segment//2])
-
-            lon_segments.append(lon_modify)
-            lat_segments.append(lat_modify)
-
-        lon_array = np.concatenate([segment.flatten()
-                                   for segment in lon_segments])
-        lat_array = np.concatenate([segment.flatten()
-                                   for segment in lat_segments])
-        var_array = np.concatenate([segment.flatten()
-                                   for segment in data_segments])
-
-        return lon_array, lat_array, var_array
 
     def generate_images(self, image_format='png', nearest=False, world_file=False, granule_id=""):
         """
@@ -439,9 +198,19 @@ class TIG():
         lon_array, lat_array = self.get_lon_lat(param_group=group)
 
         # Get Bounds of the dataset
+        eastern = lon_array.max()
+        western = lon_array.min()
         northern = lat_array.max()
         southern = lat_array.min()
-        region = (southern, northern, -180, 180)
+
+        # Calculate output dimensions
+        if not self.crosses_antimeridian(lon_array):
+            self.logger.debug("Region does not crosses 180/-180")
+            region = (southern, northern, western, eastern)
+        else:
+            # Image spans antimeridian, wrap it.
+            self.logger.debug("Region crosses 180/-180")
+            region = (southern, northern, -180, 180)
         self.logger.info("region: %s", str(region))
         height_deg = region[1] - region[0]
         width_deg = region[3] - region[2]
@@ -457,14 +226,6 @@ class TIG():
             self.variables = self.config.get("imgVariables", [])
 
         for var in self.variables:
-
-            override_rows = None
-            override_cols = None
-
-            if var.get('ppd'):
-                new_dimensions = (int(height_deg * var.get('ppd')), int(width_deg * var.get('ppd')))
-                override_rows, override_cols = new_dimensions
-
             output_image_file = self.process_variable(var,
                                                       lon_array,
                                                       lat_array,
@@ -473,9 +234,7 @@ class TIG():
                                                       nearest,
                                                       world_file,
                                                       granule_id,
-                                                      group,
-                                                      override_rows,
-                                                      override_cols)
+                                                      group)
             if output_image_file is not None:
                 output_images.append({'image_file': output_image_file, 'variable': var['id'], 'group': group})
 
@@ -491,9 +250,7 @@ class TIG():
                          nearest=False,
                          world_file=False,
                          granule_id="",
-                         param_group=None,
-                         override_rows=None,
-                         override_cols=None):
+                         param_group=None):
         """
         Processes an invidual variable to generate an image
         Parameters
@@ -554,29 +311,15 @@ class TIG():
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
-        rows = self.rows
-        cols = self.cols
-
-        if override_rows:
-            rows = override_rows
-        if override_cols:
-            cols = override_cols
-
-        if var.get('is_swot_expert') and var.get('id') == "ssha_karin_2":
-            lon_array, lat_array, var_array = self.get_swot_expert_data(group_string)
-
         try:
             # Generate an array to populate data for image output
             output_vals = self.generate_image_output(var_array,
                                                      lon_array,
                                                      lat_array,
                                                      fill_value,
-                                                     rows,
-                                                     cols,
                                                      nearest)
             output_vals[output_vals == fill_value] = np.nan
-            out_array = np.flip(output_vals.flatten().reshape(rows, cols), 0)
-
+            out_array = np.flip(output_vals.flatten().reshape(self.rows, self.cols), 0)
             # Color the image output array and save to a file
             plt.imsave(output_location,
                        out_array,
@@ -584,14 +327,13 @@ class TIG():
                        vmax=float(var['max']),
                        cmap=colormap,
                        format=image_format)
-
             self.logger.info("Wrote %s", output_location)
 
             # Create world file if specified
             if world_file:
                 output_wld = output_location.replace(image_format, 'wld')
-                wld_string = create_world_file((self.region.max_lon-self.region.min_lon)/cols,
-                                               (self.region.max_lat-self.region.min_lat)/rows,
+                wld_string = create_world_file((self.region.max_lon-self.region.min_lon)/self.cols,
+                                               (self.region.max_lat-self.region.min_lat)/self.rows,
                                                self.region.max_lat,
                                                self.region.min_lon)
                 with open(output_wld, 'w') as wld:
@@ -613,10 +355,7 @@ class TIG():
                               lon_array,
                               lat_array,
                               fill_value,
-                              rows,
-                              cols,
-                              nearest=False,
-                              ):
+                              nearest=False):
         """
         Generates output that matches image extents using discrete global grids
         Parameters
@@ -638,10 +377,9 @@ class TIG():
         """
 
         # Generate a grid matching the output image
-        lon_grid, lat_grid = self.get_lon_lat_grids(rows, cols)
-        image_grid = grids.BasicGrid(lon_grid.flatten(),
-                                     lat_grid.flatten(),
-                                     shape=(rows, cols))
+        image_grid = grids.BasicGrid(self.get_lon_lat_grids()[0].flatten(),
+                                     self.get_lon_lat_grids()[1].flatten(),
+                                     shape=(self.rows, self.cols))
 
         # Generate a grid matching the dataset
         data_grid = grids.BasicGrid(lon_array.flatten(), lat_array.flatten())
@@ -650,7 +388,7 @@ class TIG():
         lut = data_grid.calc_lut(image_grid)
 
         # Generate an array for output values
-        output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
+        output_vals = np.full(self.rows * self.cols, fill_value, dtype=np.float64)
 
         # Use values nearest to grid cells within max_dist
         if nearest:

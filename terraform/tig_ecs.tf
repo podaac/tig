@@ -18,7 +18,7 @@ module "tig_service" {
   tags                                  = merge(var.tags, { Project = var.prefix })
   cluster_arn                           = var.cluster_arn
   desired_count                         = var.desired_count
-  image                                 = var.image
+  image                                 = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   log_destination_arn                   = var.log_destination_arn
   cpu                                   = var.ecs_cpu
   memory_reservation                    = var.ecs_memory_reservation
@@ -30,14 +30,14 @@ module "tig_service" {
       CONFIG_DIR                  = var.config_dir
       LOGGING_LEVEL               = var.log_level  
       AWS_DEFAULT_REGION          = var.region
-      PYTHONPATH                  = ":/function"
+      PYTHONPATH                  = ":/var/task"
       CONFIG_URL                  = var.config_url
       PALETTE_URL                 = var.palette_url
   }
 
   command = [
-    "/usr/local/bin/python",
-    "/function/podaac/lambda_handler/lambda_handler.py",
+    "/var/lang/bin/python",
+    "/var/task/podaac/lambda_handler/lambda_handler.py",
     "activity",
     "--arn",
     aws_sfn_activity.tig_ecs_task.id

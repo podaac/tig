@@ -4,13 +4,20 @@ locals {
 }
 
 resource "aws_lambda_function" "tig_task" {
+
+  depends_on = [
+    null_resource.upload_ecr_image
+  ]
+
   function_name = "${local.lambda_resources_name}-lambda"
-  image_uri     = var.image
+  image_uri     = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   role          = var.role
   timeout       = var.timeout
   memory_size   = var.memory_size
   package_type  = "Image"
   
+  architectures = var.architectures
+
   image_config {
     command = var.command
     entry_point = var.entry_point
@@ -45,13 +52,20 @@ resource "aws_cloudwatch_log_group" "tig_task" {
 
 
 resource "aws_lambda_function" "tig_cleaner_task" {
+
+  depends_on = [
+    null_resource.upload_ecr_image
+  ]
+  
   function_name = "${local.lambda_resources_name}-lambda-cleaner"
-  image_uri     = var.image
+  image_uri     = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   role          = var.role
   timeout       = var.timeout
   memory_size   = var.memory_size
   package_type  = "Image"
   
+  architectures = var.architectures
+
   image_config {
     command = ["podaac.lambda_handler.clean_lambda_handler.handler"]
     entry_point = var.entry_point

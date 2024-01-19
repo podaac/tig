@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased]
 
 ### Added
+- ** Add Arm Architecture **
+  - update tig to be able to run with arm architecture
+- ** Add image uploading **
+  - update tig to upload tig image to ecr
 ### Changed
 ### Deprecated
 ### Removed

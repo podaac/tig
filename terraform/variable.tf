@@ -6,6 +6,12 @@ variable app_name{
 
 variable image{
   description = "ECR image arn"
+  default = ""
+  type = string
+}
+
+variable lambda_container_image_uri{
+  description = "public image url"
   type = string
 }
 
@@ -35,13 +41,13 @@ variable command{
 variable entry_point{
   description = "Entry point for docker container"
   type = list(string)
-  default = ["/usr/local/bin/python", "-m", "awslambdaric"]
+  default = ["/var/lang/bin/python", "-m", "awslambdaric"]
 }
 
 variable working_directory{
   description = "Working directory for docker container"
   type = string
-  default = "/function"
+  default = "/var/task"
 }
 
 variable cmr_environment{
@@ -332,4 +338,9 @@ variable "scale_down_step_adjustment" {
       scaling_adjustment = 0
     }
   ]
+}
+
+variable architectures {
+  default = ["arm64"]
+  type = list
 }

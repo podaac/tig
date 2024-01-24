@@ -5,7 +5,7 @@ tig.py
 
 Main module for the Tool for Image Generation (TIG)
 """
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-lines
 
 import os
 import logging
@@ -492,6 +492,89 @@ class TIG():
         self.logger.info("Finished processing variables")
         return output_images
 
+    def get_non_black_neighbor_value(self, img, x, y):
+        """
+        Get the value of a neighboring pixel that isn't black for a given pixel coordinate in an image array.
+
+        Parameters:
+        - img: NumPy array representing the image.
+        - x: Row coordinate of the pixel.
+        - y: Column coordinate of the pixel.
+
+        Returns:
+        - Value of a neighboring pixel that isn't black, or None if all neighbors are black.
+        """
+        height, width = img.shape[:2]
+
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                # Skip the central pixel itself
+                if i == 0 and j == 0:
+                    continue
+
+                # Calculate neighboring pixel coordinates
+                neighbor_x = x + i
+                neighbor_y = y + j
+
+                # Check if the neighbor is within the image bounds
+                if 0 <= neighbor_x < height and 0 <= neighbor_y < width:
+                    neighbor_value = img[neighbor_x, neighbor_y]
+
+                    # Check if the neighbor is not black (assuming black is 0)
+                    if not np.isnan(neighbor_value):
+                        return neighbor_value
+
+        # Return None if all neighbors are black
+        return None
+
+    def fill_swath_with_neighboring_pixel(self, output_array):
+        """
+        This method fills NaN values in the input image with RGB values from neighboring pixels.
+        The replacement values are chosen randomly from non-missing pixel portions of the image.
+        The probability of selecting a value is inversely proportional to the distance from the NaN position.
+
+        The function uses a helper function `non_nan_neighbors` to check if the neighboring values of a given
+        position are not NaN. It then retrieves x and y coordinates of NaN values with at least one non-NaN neighbor
+        and fills the NaN values in the copy with values from these neighbors.
+
+        Parameters:
+        - output_array (numpy.ndarray): Input image with missing data represented as NaN values.
+
+        Returns:
+        numpy.ndarray: (numpy.ndarray): Output image with missing values surrounded by data filled in.
+        """
+
+        def non_nan_neighbors(arr, x, y):
+            """
+            Check if the neighboring values of a given position are not NaN.
+
+            Parameters:
+            - arr (numpy.ndarray): Input array.
+            - x (int): x-coordinate of the position to check.
+            - y (int): y-coordinate of the position to check.
+
+            Returns:
+            bool: True if there is at least one non-NaN neighbor, False otherwise.
+
+            """
+            neighbors = [
+                (x-1, y), (x+1, y),  # Left and right neighbors
+                (x, y-1), (x, y+1)   # Up and down neighbors
+            ]
+            non_nan_count = sum(1 for i, j in neighbors if 0 <= i < arr.shape[0] and 0 <= j < arr.shape[1] and not np.isnan(arr[i, j]))
+            return non_nan_count >= 1
+
+        # Get the indices of NaN values
+        img_with_neighbor_filled = output_array.copy()
+        x_swath, y_swath = zip(*[(x, y) for x, y in zip(*np.where(np.isnan(output_array))) if non_nan_neighbors(output_array, x, y)])
+
+        for index, (x, y) in enumerate(zip(x_swath, y_swath)):  # pylint: disable=unused-variable
+            value = self.get_non_black_neighbor_value(output_array, x, y)
+            if value is not None:
+                img_with_neighbor_filled[x, y] = value
+
+        return img_with_neighbor_filled
+
     def process_variable(self,
                          var,
                          lon_array,
@@ -561,16 +644,12 @@ class TIG():
         group_string = group.strip('/').replace('/', '.').replace(" ", "_")
         file_name = '.'.join(x for x in [granule_id, group_string, variable, image_format] if x)
         output_location = "{}/{}".format(self.output_dir, file_name)
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+        
+        # Create the output directory if it doesn't exist
+        os.makedirs(self.output_dir, exist_ok=True)
 
-        rows = self.rows
-        cols = self.cols
-
-        if override_rows:
-            rows = override_rows
-        if override_cols:
-            cols = override_cols
+        rows = override_rows if override_rows else self.rows
+        cols = override_cols if override_cols else self.cols
 
         if var.get('is_swot_expert') and var.get('id') == "ssha_karin_2":
             lon_array, lat_array, var_array = self.get_swot_expert_data(group_string)
@@ -586,6 +665,9 @@ class TIG():
                                                      nearest)
             output_vals[output_vals == fill_value] = np.nan
             out_array = np.flip(output_vals.flatten().reshape(rows, cols), 0)
+
+            if var.get('fill_missing'):
+                out_array = self.fill_swath_with_neighboring_pixel(out_array)
 
             # Color the image output array and save to a file
             plt.imsave(output_location,

@@ -644,7 +644,7 @@ class TIG():
         group_string = group.strip('/').replace('/', '.').replace(" ", "_")
         file_name = '.'.join(x for x in [granule_id, group_string, variable, image_format] if x)
         output_location = "{}/{}".format(self.output_dir, file_name)
-        
+
         # Create the output directory if it doesn't exist
         os.makedirs(self.output_dir, exist_ok=True)
 

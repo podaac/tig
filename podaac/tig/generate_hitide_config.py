@@ -104,9 +104,9 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
             's2': '0:*,*:*'
         }
 
-    vars_min_max = {}
+    vars_data = {}
     if include_image_variables:
-        vars_min_max = read_min_max_csv(include_image_variables)
+        vars_data = read_min_max_csv(include_image_variables)
 
     with nc.Dataset(granule, 'r') as dataset:  # pylint: disable=no-member
 
@@ -115,19 +115,23 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
 
         try:
             for data_var in data_var_names:
-                if vars_min_max and data_var in vars_min_max:
+                if vars_data and data_var in vars_data:
                     variable = dataset[data_var]
 
                     units = variable.units if 'units' in variable.ncattrs() else ''
                     long_name = variable.long_name if 'long_name' in variable.ncattrs() else ''
 
-                    if data_var in vars_min_max:
-                        min_max = vars_min_max[data_var]
-                        min_val = float(min_max['min'])
-                        max_val = float(min_max['max'])
+                    palette = 'paletteMedspirationIndexed'
+                    if data_var in vars_data:
+                        min_val = float(vars_data[data_var]['min'])
+                        max_val = float(vars_data[data_var]['max'])
+                        palette = vars_data[data_var].get('palette')
                     else:
                         min_val = variable.valid_min if 'valid_min' in variable.ncattrs() else ''
                         max_val = variable.valid_max if 'valid_max' in variable.ncattrs() else ''
+
+                    if not palette:
+                        palette = 'paletteMedspirationIndexed'
 
                     dataset_config['imgVariables'].append({
                         'id': data_var,
@@ -135,7 +139,7 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
                         'units': units,
                         'min': min_val,
                         'max': max_val,
-                        'palette': 'paletteMedspirationIndexed'
+                        'palette': palette
                     })
 
         except Exception as ex:  # pylint: disable=broad-exception-caught

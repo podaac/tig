@@ -546,23 +546,22 @@ class TIG():
 
         def non_nan_neighbors(arr, x, y):
             """
-            Check if the neighboring values of a given position are not NaN.
+            Check if there is at least one non-NaN neighbor for a given position.
 
             Parameters:
             - arr (numpy.ndarray): Input array.
-            - x (int): x-coordinate of the position to check.
-            - y (int): y-coordinate of the position to check.
+            - x (int): x-coordinate of the position.
+            - y (int): y-coordinate of the position.
 
             Returns:
             bool: True if there is at least one non-NaN neighbor, False otherwise.
-
             """
             neighbors = [
                 (x-1, y), (x+1, y),  # Left and right neighbors
                 (x, y-1), (x, y+1)   # Up and down neighbors
             ]
-            non_nan_count = sum(1 for i, j in neighbors if 0 <= i < arr.shape[0] and 0 <= j < arr.shape[1] and not np.isnan(arr[i, j]))
-            return non_nan_count >= 1
+
+            return any(0 <= i < arr.shape[0] and 0 <= j < arr.shape[1] and not np.isnan(arr[i, j]) for i, j in neighbors)
 
         # Get the indices of NaN values
         img_with_neighbor_filled = output_array.copy()

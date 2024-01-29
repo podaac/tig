@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ** Add image uploading **
   - update tig to upload tig image to ecr
 - ** Add palette support to generating configuration **
-  - [issue/44] (https://github.com/podaac/hitide/issues/44): Add support to palette in csv in generating configuration
+  - [issue/44] (https://github.com/podaac/hitide/issues/44): Add support to palette, ppd, fill_missing in csv in generating configuration
 ### Changed
 ### Deprecated
 ### Removed

@@ -122,10 +122,15 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
                     long_name = variable.long_name if 'long_name' in variable.ncattrs() else ''
 
                     palette = 'paletteMedspirationIndexed'
+                    fill_missing = False
+                    ppd = 16
+
                     if data_var in vars_data:
                         min_val = float(vars_data[data_var]['min'])
                         max_val = float(vars_data[data_var]['max'])
                         palette = vars_data[data_var].get('palette')
+                        fill_missing = vars_data[data_var].get('fill_missing', False)
+                        ppd = vars_data[data_var].get('ppd', 16)
                     else:
                         min_val = variable.valid_min if 'valid_min' in variable.ncattrs() else ''
                         max_val = variable.valid_max if 'valid_max' in variable.ncattrs() else ''
@@ -133,14 +138,23 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
                     if not palette:
                         palette = 'paletteMedspirationIndexed'
 
-                    dataset_config['imgVariables'].append({
+                    dataset_dict = {
                         'id': data_var,
                         'title': long_name,
                         'units': units,
                         'min': min_val,
                         'max': max_val,
                         'palette': palette
-                    })
+                    }
+
+                    if fill_missing:
+                        fill_missing = fill_missing.lower().strip()
+                        dataset_dict['fill_missing'] = fill_missing == "true"
+
+                    if ppd != 16 and ppd.isdigit():
+                        dataset_dict['ppd'] = int(ppd)
+
+                    dataset_config['imgVariables'].append(dataset_dict)
 
         except Exception as ex:  # pylint: disable=broad-exception-caught
             print(f"Error: Failed on variable {data_var}, exception: " + str(ex))

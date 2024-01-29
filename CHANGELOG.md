@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+- ** Add function to fill in missing pixels for certain collections **
+  - [issue/26](https://github.com/podaac/tig/issues/26): Fix images with missing pixels for ASCAT collections
 ### Security
 
 

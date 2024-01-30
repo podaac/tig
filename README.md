@@ -84,6 +84,7 @@ footprint_strategy: strategy to generate footprint will default to None options 
 variable: name of variable
 min: min value for variable
 max: max value for variable
+palette (optional): the palette to be used for the variable
 fill_missing (optional): if the generated images have missing pixel in images most likely resolution is to big, either lower resolution or we can fill in the pixels with surrounding pixel
 ppd (optional): resolution of the variable, must be an integer
 

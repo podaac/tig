@@ -344,3 +344,16 @@ variable architectures {
   default = ["arm64"]
   type = list
 }
+
+
+variable "memory_sizes" {
+  description = "List of memory sizes for Lambda functions"
+  type        = list(number)
+  default     = []
+}
+
+variable "function_names" {
+  description = "List of names for Lambda functions"
+  type        = list(string)
+  default = ["lambda"]
+}

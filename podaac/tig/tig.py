@@ -452,6 +452,8 @@ class TIG():
             # Image spans antimeridian, wrap it.
             self.logger.debug("Region crosses 180/-180")
             region = (southern, northern, -180, 180)
+
+        region = (-90, 90, -180, 180)
         self.logger.info("region: %s", str(region))
         height_deg = region[1] - region[0]
         width_deg = region[3] - region[2]

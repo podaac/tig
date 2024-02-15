@@ -21,7 +21,7 @@ resource null_resource ecr_login {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-e", "-c"]
     command = <<EOF
-      docker login ${data.aws_ecr_authorization_token.token.proxy_endpoint} -u AWS -p ${data.aws_ecr_authorization_token.token.password}
+      echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
       EOF
   }
 }

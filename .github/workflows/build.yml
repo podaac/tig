@@ -249,6 +249,7 @@ jobs:
         run: |
           poetry run pylint podaac
           poetry run flake8 podaac
+          poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=html -m "not aws and not integration" tests/
       # poetry run pytest --junitxml=build/reports/pytest.xml --cov=podaac/ --cov-report=xml:build/reports/coverage.xml -m "not aws and not integration" tests/
 
       ## TODO: Find out where the test report goes

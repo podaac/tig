@@ -209,10 +209,10 @@ class TIG():
                 prev = x_val
                 continue
             if prev > 0 > x_val and prev - x_val > 200:
-                self.logger.debug("prev, x: %s, %s", prev, x_val)
+                self.logger.debug(f"prev, x: {prev}, {x_val}")
                 result = True
             elif x_val > 0 > prev and x_val - prev > 200:
-                self.logger.debug("prev, x: %s, %s", prev, x_val)
+                self.logger.debug(f"prev, x: {prev}, {x_val}")
                 result = True
         return result
 
@@ -399,7 +399,7 @@ class TIG():
             List of output image file locations
         """
 
-        self.logger.info("\nProcessing %s", self.input_file)
+        self.logger.info(f"\nProcessing {self.input_file}")
         output_images = []
         if self.config.get('multi_lon_lat'):
             for group in self.config.get('multi_groups'):
@@ -452,7 +452,9 @@ class TIG():
             # Image spans antimeridian, wrap it.
             self.logger.debug("Region crosses 180/-180")
             region = (southern, northern, -180, 180)
-        self.logger.info("region: %s", str(region))
+
+        region = (-90, 90, -180, 180)
+        self.logger.info(f"region: {region}")
         height_deg = region[1] - region[0]
         width_deg = region[3] - region[2]
         self.region = Region(region)
@@ -534,7 +536,7 @@ class TIG():
 
         # Get variable name
         config_variable = var['id']
-        self.logger.info('variable: %s', config_variable)
+        self.logger.info(f'variable: {config_variable}')
 
         group, _, variable = config_variable.rpartition('/')
         if param_group:
@@ -554,7 +556,7 @@ class TIG():
         local_dataset.close()
 
         # Get palette info
-        self.logger.info('palette: %s', var['palette'])
+        self.logger.info(f"palette: {var['palette']}")
         colormap = load_json_palette(self.palette_dir, var['palette'], alpha)
 
         # Set the output location
@@ -595,7 +597,7 @@ class TIG():
                        cmap=colormap,
                        format=image_format)
 
-            self.logger.info("Wrote %s", output_location)
+            self.logger.info(f"Wrote {output_location}")
 
             # Create world file if specified
             if world_file:
@@ -606,7 +608,7 @@ class TIG():
                                                self.region.min_lon)
                 with open(output_wld, 'w') as wld:
                     wld.write(wld_string)
-                self.logger.info("Wrote %s", output_wld)
+                self.logger.info(f"Wrote {output_wld}")
 
         except grids.GridDefinitionError:
             self.logger.warning("Could not grid variable %s", variable.split('/')[-1], exc_info=True)
@@ -651,10 +653,11 @@ class TIG():
         lon_grid, lat_grid = self.get_lon_lat_grids(rows, cols)
         image_grid = grids.BasicGrid(lon_grid.flatten(),
                                      lat_grid.flatten(),
-                                     shape=(rows, cols))
+                                     shape=(rows, cols),
+                                     transform_lon=False)
 
         # Generate a grid matching the dataset
-        data_grid = grids.BasicGrid(lon_array.flatten(), lat_array.flatten())
+        data_grid = grids.BasicGrid(lon_array.flatten(), lat_array.flatten(), transform_lon=False)
 
         # Generate a look-up table between the image and data grid
         lut = data_grid.calc_lut(image_grid)

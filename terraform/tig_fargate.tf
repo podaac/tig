@@ -9,22 +9,22 @@ module "tig_fargate" {
   tags = var.tags
   iam_role = var.fargate_iam_role
   command = [
-    "/usr/local/bin/python",
-    "/function/podaac/lambda_handler/lambda_handler.py",
+    "/var/lang/bin/python",
+    "/var/task//podaac/lambda_handler/lambda_handler.py",
     "activity",
     "--arn",
     aws_sfn_activity.tig_ecs_task.id
   ]
 
   environment = {
-    "PYTHONPATH": ":/function",
+    "PYTHONPATH": ":/var/task",
     "CONFIG_BUCKET": "${var.prefix}-internal",
     "CONFIG_DIR" : var.config_dir,
     "CONFIG_URL" : var.config_url,
     "PALETTE_URL" : var.palette_url
   }
 
-  image = var.image
+  image = "${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}"
   ecs_cluster_arn = var.cluster_arn
   subnet_ids = var.subnet_ids
   scale_dimensions =  var.scale_dimensions != null ? var.scale_dimensions : {"ServiceName" = "${var.prefix}-${var.app_name}-fargate-service","ClusterName" = var.ecs_cluster_name}

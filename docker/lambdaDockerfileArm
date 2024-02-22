@@ -1,0 +1,25 @@
+#ARG FUNCTION_DIR="/function"
+
+FROM public.ecr.aws/lambda/python:3.10-arm64
+
+# Include global arg in this stage of the build
+ARG SOURCE
+
+RUN yum -q -y install gcc
+
+# Create function directory
+# RUN mkdir -p ${FUNCTION_DIR}
+# WORKDIR ${FUNCTION_DIR}
+
+# Install tig from artifactory
+COPY $DIST_PATH $DIST_PATH
+
+# install tig into working directory so we can call lambda
+RUN pip3 install awslambdaric --target $LAMBDA_TASK_ROOT
+
+RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target "${LAMBDA_TASK_ROOT}" $SOURCE
+
+RUN rm -rf $DIST_PATH
+
+ENTRYPOINT []
+CMD ["podaac.lambda_handler.lambda_handler.handler"]

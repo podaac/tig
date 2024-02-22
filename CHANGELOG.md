@@ -14,6 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.9.0]
+
+### Added
+- ** Add Arm Architecture **
+  - update tig to be able to run with arm architecture
+- ** Add image uploading **
+  - update tig to upload tig image to ecr
+- ** Add palette support to generating configuration **
+  - [issue/44] (https://github.com/podaac/hitide/issues/44): Add support to palette, ppd, fill_missing in csv in generating configuration
+- ** Fix swot 2.0 alignment issue **
+  - Added way to use global grid for region if it is in hitide configurations
+### Changed
+### Deprecated
+### Removed
+### Fixed
+- ** Add function to fill in missing pixels for certain collections **
+  - [issue/26](https://github.com/podaac/tig/issues/26): Fix images with missing pixels for ASCAT collections
+### Security
+
+
 ## [0.8.0]
 
 ### Added

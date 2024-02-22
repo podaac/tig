@@ -104,9 +104,9 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
             's2': '0:*,*:*'
         }
 
-    vars_min_max = {}
+    vars_data = {}
     if include_image_variables:
-        vars_min_max = read_min_max_csv(include_image_variables)
+        vars_data = read_min_max_csv(include_image_variables)
 
     with nc.Dataset(granule, 'r') as dataset:  # pylint: disable=no-member
 
@@ -115,28 +115,46 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
 
         try:
             for data_var in data_var_names:
-                if vars_min_max and data_var in vars_min_max:
+                if vars_data and data_var in vars_data:
                     variable = dataset[data_var]
 
                     units = variable.units if 'units' in variable.ncattrs() else ''
                     long_name = variable.long_name if 'long_name' in variable.ncattrs() else ''
 
-                    if data_var in vars_min_max:
-                        min_max = vars_min_max[data_var]
-                        min_val = float(min_max['min'])
-                        max_val = float(min_max['max'])
+                    palette = 'paletteMedspirationIndexed'
+                    fill_missing = False
+                    ppd = 16
+
+                    if data_var in vars_data:
+                        min_val = float(vars_data[data_var]['min'])
+                        max_val = float(vars_data[data_var]['max'])
+                        palette = vars_data[data_var].get('palette')
+                        fill_missing = vars_data[data_var].get('fill_missing', False)
+                        ppd = vars_data[data_var].get('ppd', 16)
                     else:
                         min_val = variable.valid_min if 'valid_min' in variable.ncattrs() else ''
                         max_val = variable.valid_max if 'valid_max' in variable.ncattrs() else ''
 
-                    dataset_config['imgVariables'].append({
+                    if not palette:
+                        palette = 'paletteMedspirationIndexed'
+
+                    dataset_dict = {
                         'id': data_var,
                         'title': long_name,
                         'units': units,
                         'min': min_val,
                         'max': max_val,
-                        'palette': 'paletteMedspirationIndexed'
-                    })
+                        'palette': palette
+                    }
+
+                    if fill_missing:
+                        fill_missing = fill_missing.lower().strip()
+                        dataset_dict['fill_missing'] = fill_missing == "true"
+
+                    if ppd != 16 and ppd.isdigit():
+                        dataset_dict['ppd'] = int(ppd)
+
+                    dataset_config['imgVariables'].append(dataset_dict)
 
         except Exception as ex:  # pylint: disable=broad-exception-caught
             print(f"Error: Failed on variable {data_var}, exception: " + str(ex))

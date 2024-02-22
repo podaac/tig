@@ -1,3 +1,3 @@
-variable,min,max
-data_01/ku/ssha,-0.2,0.2
-data_01/ku/swh_ocean,0,30
+variable,min,max,palette,fill_missing,ppd
+data_01/ku/ssha,-0.2,0.2,paletteMedspirationIndexed,TRUE,20
+data_01/ku/swh_ocean,0,30,palette_AQUARIUS,FALSE,15

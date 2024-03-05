@@ -710,7 +710,7 @@ class TIG():
                               fill_value,
                               rows,
                               cols,
-                              nearest
+                              nearest  # pylint: disable=unused-argument
                               ):
         """
         Generates output that matches image extents using discrete global grids
@@ -745,9 +745,11 @@ class TIG():
         # Generate an array for output values
         output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
 
+        # pylint: disable=pointless-string-statement
         """
         # Use values nearest to grid cells within max_dist
         if nearest:
+
             # Get grid points
             gpis, gridlons, gridlats = image_grid.get_grid_points()
 
@@ -760,11 +762,6 @@ class TIG():
                     if value != np.isnan:
                         if output_vals[i] == fill_value:
                             output_vals[i] = value
-                        else:
-                            # average two values if they fall in the same grid cell
-                            output_vals[i] = (output_vals[i] + value) / 2
-                    else:
-                        output_vals[i] = fill_value
         # Use values only within grid cells
         else:
             # remove nan values
@@ -782,7 +779,7 @@ class TIG():
                 except IndexError:
                     continue
         """
-        
+
         # Iterate through valid values in var_array, remove nan values
         valid_values = ~np.isnan(var_array)
         lut = lut[valid_values]
@@ -796,7 +793,6 @@ class TIG():
         # Replace the loop with NumPy indexing
         valid_indices = np.where(output_vals[lut] == fill_value)[0]
         output_vals[lut[valid_indices]] = var_array[valid_indices]
-        
 
         # Return output values
         return output_vals

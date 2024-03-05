@@ -747,41 +747,14 @@ class TIG():
         # Generate an array for output values
         output_vals = np.full(rows * cols, fill_value, dtype=np.float64)
 
-        # Use values nearest to grid cells within max_dist
-        if nearest:
-            # Get grid points
-            gpis, gridlons, gridlats = image_grid.get_grid_points()
+        # Iterate through valid values in var_array, remove nan values
+        valid_values = ~np.isnan(var_array)
+        lut = lut[valid_values]
+        var_array = var_array[valid_values]
 
-            max_dist = DEG_M/self.ppd
-            for i, idx in enumerate(gpis):
-                ngpi, distance = data_grid.find_nearest_gpi(gridlons[idx],
-                                                            gridlats[idx])
-                if distance <= max_dist:
-                    value = var_array[ngpi]
-                    if value != np.isnan:
-                        if output_vals[i] == fill_value:
-                            output_vals[i] = value
-                        else:
-                            # average two values if they fall in the same grid cell
-                            output_vals[i] = (output_vals[i] + value) / 2
-                    else:
-                        output_vals[i] = fill_value
-        # Use values only within grid cells
-        else:
-            # remove nan values
-            lut = lut[~(np.isnan(var_array))]
-            var_array = var_array[~(np.isnan(var_array))]
-            for i, val in enumerate(var_array):
-                idx = lut[i]
-                try:
-                    if output_vals[idx] == fill_value:
-                        output_vals[idx] = val
-                    else:
-                        # average two values if they fall in the same grid cell
-                        output_vals[idx] = (output_vals[idx] + val) / 2
-                # skip rare situations where we encounter nan location values
-                except IndexError:
-                    continue
+        # Replace the loop with NumPy indexing
+        valid_indices = np.where(output_vals[lut] == fill_value)[0]
+        output_vals[lut[valid_indices]] = var_array[valid_indices]
 
         # Return output values
         return output_vals

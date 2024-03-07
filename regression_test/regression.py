@@ -1,9 +1,9 @@
 """
 ==============
-test_tig.py
+regression.py
 ==============
 
-Test TIG functionality.
+Test TIG on all our collections.
 """
 import filecmp
 import os

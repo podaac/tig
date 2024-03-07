@@ -25,7 +25,6 @@ def download_configs(config_dir):
     api_url = f"https://api.github.com/repos/podaac/forge-tig-configuration/contents/config-files"
     response = requests.get(api_url)
 
-    i = 0
     if response.status_code == 200:
          for file in response.json():
             url = file.get('download_url')

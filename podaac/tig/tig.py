@@ -380,15 +380,13 @@ class TIG():
 
         return lon_array, lat_array, var_array
 
-    def generate_images(self, image_format='png', nearest=False, world_file=False, granule_id=""):
+    def generate_images(self, image_format='png', world_file=False, granule_id=""):
         """
         Generates images for each configured variable in a NetCDF file.
         Parameters
         ----------
         image_format : string
             Any output image formatted supported by matplotlib
-        nearest : bool
-            Fill in values from the nearest grid cell to match pixel resolution
         world_file : bool
             Output an Esri world file for each image that can be used by GIS tools
        granule_id : string
@@ -403,20 +401,18 @@ class TIG():
         output_images = []
         if self.config.get('multi_lon_lat'):
             for group in self.config.get('multi_groups'):
-                output_images += self.generate_images_group(image_format, nearest, world_file, granule_id, group=group)
+                output_images += self.generate_images_group(image_format, world_file, granule_id, group=group)
         else:
-            output_images = self.generate_images_group(image_format, nearest, world_file, granule_id, group=None)
+            output_images = self.generate_images_group(image_format, world_file, granule_id, group=None)
         return output_images
 
-    def generate_images_group(self, image_format='png', nearest=False, world_file=False, granule_id="", group=None):
+    def generate_images_group(self, image_format='png', world_file=False, granule_id="", group=None):
         """
         Generates images for each configured variable in a NetCDF file.
         Parameters
         ----------
         image_format : string
             Any output image formatted supported by matplotlib
-        nearest : bool
-            Fill in values from the nearest grid cell to match pixel resolution
         world_file : bool
             Output an Esri world file for each image that can be used by GIS tools
         granule_id : string
@@ -484,7 +480,6 @@ class TIG():
                                                       lat_array,
                                                       alpha,
                                                       image_format,
-                                                      nearest,
                                                       world_file,
                                                       granule_id,
                                                       group,
@@ -584,7 +579,6 @@ class TIG():
                          lat_array,
                          alpha,
                          image_format='png',
-                         nearest=False,
                          world_file=False,
                          granule_id="",
                          param_group=None,
@@ -604,8 +598,6 @@ class TIG():
             Whether or not the image should contain an alpha channel
         image_format : string
             Any output image formatted supported by imageio
-        nearest : bool
-            Fill in values from the nearest grid cell to match pixel resolution
         world_file : bool
             Output an Esri world file for each image that can be used by GIS tools
         granule_id : string
@@ -664,8 +656,7 @@ class TIG():
                                                      lat_array,
                                                      fill_value,
                                                      rows,
-                                                     cols,
-                                                     nearest)
+                                                     cols)
             output_vals[output_vals == fill_value] = np.nan
             out_array = np.flip(output_vals.flatten().reshape(rows, cols), 0)
 
@@ -709,8 +700,7 @@ class TIG():
                               lat_array,
                               fill_value,
                               rows,
-                              cols,
-                              nearest  # pylint: disable=unused-argument
+                              cols
                               ):
         """
         Generates output that matches image extents using discrete global grids

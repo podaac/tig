@@ -79,6 +79,20 @@ latitude: latitude variable include the group if they're in a group defaults to 
 time: time variable include the group if they're in a group defaults to time
 footprint_strategy: strategy to generate footprint will default to None options should be ["periodic", "linestring", "polar", "swot_linestring", "polarsides", "smap"]
 
+### Regression Test
+
+** IN DEVELOPMENT **
+
+Currently there is a regression test in the regression_test folder to run please use this command
+
+Note palettes folder needs to be downloaded and included in the regression_test folder
+Were not clearing out any data after test future improvement to make it an option to clear or retain data
+as granules take awhile to download
+
+```
+pytest regression.py
+```
+
 ### CSV Columns
 
 variable: name of variable

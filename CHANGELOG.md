@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+- ** TIG improvement **
+  - Update tig to no longer average pixels and use numpy to loop through the data
+  - Added a regression test to test tig collections
 ### Deprecated
 ### Removed
 ### Fixed

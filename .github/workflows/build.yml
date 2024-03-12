@@ -27,10 +27,7 @@ jobs:
       # Checks out this repository and sets up the build/test environment with 
       # gradle
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Install Poetry
@@ -463,7 +460,7 @@ jobs:
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main'    ||
           startsWith(github.ref, 'refs/heads/release')
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/lambdaDockerfileArm
@@ -522,7 +519,7 @@ jobs:
       #########################################################################
       # Deploy to AWS via Terraform
       #########################################################################
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 0.13.6
 

@@ -31,15 +31,15 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.0.0
+        uses: abatilo/actions-poetry@v3
         with:
           poetry-version: 1.3.2
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       #########################################################################
       # Versioning (featuring weird gradle output work-arounds)
@@ -275,11 +275,9 @@ jobs:
           startsWith(github.ref, 'refs/heads/release')
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "changes=true" >> $GITHUB_ENV
-            echo "::set-output name=changes::true"
+            echo "changes=true" >> $GITHUB_OUTPUT
           else
-            echo "changes=false" >> $GITHUB_ENV
-            echo "::set-output name=changes::false"
+            echo "changes=false" >> $GITHUB_OUTPUT
           fi
       
       - name: Commit Version Bump

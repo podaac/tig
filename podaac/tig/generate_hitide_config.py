@@ -79,7 +79,7 @@ def read_min_max_csv(filename):
     return data
 
 
-def generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):
+def generate_hitide_config(granule, dataset_id, include_image_variables, longitude, latitude, time, footprint_strategy):  # pylint: disable=too-many-branches
     """Function to generate hitide configuration"""
 
     dataset_config = {
@@ -96,13 +96,38 @@ def generate_hitide_config(granule, dataset_id, include_image_variables, longitu
     }
 
     if footprint_strategy:
-        dataset_config['footprint'] = {
-            'strategy': footprint_strategy,
-            't': '0:0,0:*',
-            's1': '0:*,0:0',
-            'b': '*:*,0:*',
-            's2': '0:*,*:*'
-        }
+        if footprint_strategy == "periodic":
+            dataset_config['footprint'] = {
+                'strategy': footprint_strategy,
+                't': '0:0,0:*',
+                's1': '0:*,0:0',
+                'b': '*:*,0:*',
+                's2': '0:*,*:*'
+            }
+        elif footprint_strategy == "smap":
+            dataset_config['footprint'] = {
+                'strategy': footprint_strategy,
+                "t": "0:0,0:*,0:0",
+                "s1": "0:*,0:0,0:0",
+                "b": "*:*,0:*,0:0",
+                "s2": "0:*,*:*,0:0"
+            }
+        elif footprint_strategy == "linestring":
+            dataset_config['footprint'] = {
+                'strategy': footprint_strategy,
+                "t": "0:*",
+                "s1": "0:*",
+                "b": "0:*",
+                "s2": "0:*"
+            }
+        else:
+            dataset_config['footprint'] = {
+                'strategy': footprint_strategy,
+                't': '0:0,0:*',
+                's1': '0:*,0:0',
+                'b': '*:*,0:*',
+                's2': '0:*,*:*'
+            }
 
     vars_data = {}
     if include_image_variables:

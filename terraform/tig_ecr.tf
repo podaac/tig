@@ -14,10 +14,6 @@ resource aws_ecr_repository "lambda-image-repo" {
 
 
 resource null_resource ecr_login {
-  triggers = {
-    image_uri = var.lambda_container_image_uri
-  }
-
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-e", "-c"]
     command = <<EOF
@@ -29,9 +25,6 @@ resource null_resource ecr_login {
 
 resource null_resource upload_ecr_image {
   depends_on = [null_resource.ecr_login]
-  triggers = {
-    image_uri = var.lambda_container_image_uri
-  }
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-e", "-c"]

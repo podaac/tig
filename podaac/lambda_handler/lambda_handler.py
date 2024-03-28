@@ -244,6 +244,14 @@ class ImageGenerator(Process):
         granules = self.input['granules']
         append_output = {}
 
+        if self.kwargs.get('context', None):
+            try:
+                aws_request_id = self.kwargs.get('context').aws_request_id
+                message = f"aws_request_id: {aws_request_id} collection: {self.config.get('collection')}"
+                self.logger.info(message)
+            except AttributeError:
+                pass
+
         self.download_palette_files(config_file_path)
 
         for granule in granules:
@@ -389,6 +397,12 @@ class ImageGenerator(Process):
                 raise ex
 
         return uploaded_files
+
+
+    @classmethod
+    def handler(cls, event, context=None, path=None, noclean=False):
+        """ General event handler """
+        return cls.run(path=path, noclean=noclean, context=context, **event)
 
     @classmethod
     def run(cls, *args, **kwargs):

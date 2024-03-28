@@ -12,7 +12,7 @@ resource aws_ecr_repository "lambda-image-repo" {
   tags = var.tags
 }
 
-
+/*
 resource null_resource ecr_login {
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-e", "-c"]
@@ -34,4 +34,39 @@ resource null_resource upload_ecr_image {
       docker push ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
       EOF
   }
+}*/
+
+resource "null_resource" "ecr_login" {
+  triggers = {
+    always_run = "${random_integer.ecr_login_trigger.result}"
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-e", "-c"]
+    command = <<EOF
+      echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
+    EOF
+  }
 }
+
+resource "random_integer" "ecr_login_trigger" {
+  keepers = {
+    always_run = true
+  }
+  min     = 1
+  max     = 1000000
+}
+
+resource "null_resource" "upload_ecr_image" {
+  depends_on = [null_resource.ecr_login]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-e", "-c"]
+    command = <<EOF
+      docker pull --platform=linux/arm/v7 ${var.lambda_container_image_uri}
+      docker tag ${var.lambda_container_image_uri} ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
+      docker push ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
+    EOF
+  }
+}
+

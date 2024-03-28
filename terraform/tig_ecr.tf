@@ -12,31 +12,40 @@ resource aws_ecr_repository "lambda-image-repo" {
   tags = var.tags
 }
 
-resource "null_resource" "upload_ecr_image" {
+resource "null_resource" "docker_operations" {
   depends_on = [random_integer.ecr_login_trigger]
 
   triggers = {
     always_run = random_integer.ecr_login_trigger.result
   }
 
+  # Provisioner for Docker login command
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-e", "-c"]
     command = <<EOF
-      # Docker login
       echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint}
+    EOF
 
-      # Docker image upload
+    # Hide the output of the Docker login command
+    log = {
+      stdout = false
+      stderr = false
+    }
+  }
+
+  # Provisioner for Docker pull and tag commands
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-e", "-c"]
+    command = <<EOF
       docker pull --platform=linux/arm/v7 ${var.lambda_container_image_uri}
       docker tag ${var.lambda_container_image_uri} ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
       docker push ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
     EOF
 
-    # Hide the output of the Docker login command
+    # Specify which outputs to show in the logs for Docker pull and tag commands
     log = {
-      # Hide stdout
-      stdout = false
-      # Hide stderr
-      stderr = false
+      stdout = true
+      stderr = true
     }
   }
 }

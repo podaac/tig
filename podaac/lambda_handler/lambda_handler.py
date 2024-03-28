@@ -398,7 +398,6 @@ class ImageGenerator(Process):
 
         return uploaded_files
 
-
     @classmethod
     def handler(cls, event, context=None, path=None, noclean=False):
         """ General event handler """

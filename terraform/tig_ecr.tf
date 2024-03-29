@@ -13,8 +13,7 @@ resource aws_ecr_repository "lambda-image-repo" {
 }
 
 resource "null_resource" "upload_ecr_image" {
-  depends_on = [random_integer.ecr_login_trigger]
-
+  
   triggers = {
     always_run = timestamp()
   }

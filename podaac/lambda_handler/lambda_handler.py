@@ -247,7 +247,11 @@ class ImageGenerator(Process):
         if self.kwargs.get('context', None):
             try:
                 aws_request_id = self.kwargs.get('context').aws_request_id
-                message = f"aws_request_id: {aws_request_id} collection: {self.config.get('collection')}"
+                collection_name = self.config.get('collection').get('name')
+                message = json.dumps({
+                    "aws_request_id": aws_request_id,
+                    "collection": collection_name
+                })
                 self.logger.info(message)
             except AttributeError:
                 pass

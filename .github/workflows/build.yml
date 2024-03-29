@@ -541,7 +541,6 @@ jobs:
           TF_VAR_tig_docker_image: "ghcr.io/podaac/tig:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
           TF_VAR_EARTH_DATA_LOGIN_CLIENT_ID: ${{ secrets[format('EARTH_DATA_LOGIN_CLIENT_ID_{0}', env.TARGET_ENV_UPPERCASE)] }}
           TF_VAR_EARTH_DATA_LOGIN_PASSWORD: ${{ secrets[format('EARTH_DATA_LOGIN_PASSWORD_{0}', env.TARGET_ENV_UPPERCASE)] }}
-        silent: true
         run: |
           ls -al
           ls -al bin/
@@ -556,3 +555,5 @@ jobs:
           source bin/config.sh ${{ env.TARGET_ENV_LOWERCASE }}
           terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
           terraform apply -auto-approve tfplan
+        silent: true
+

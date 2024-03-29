@@ -16,7 +16,7 @@ resource "null_resource" "upload_ecr_image" {
   depends_on = [random_integer.ecr_login_trigger]
 
   triggers = {
-    always_run = random_integer.ecr_login_trigger.result
+    always_run = timestamp()
   }
 
   provisioner "local-exec" {
@@ -31,12 +31,4 @@ resource "null_resource" "upload_ecr_image" {
       docker push ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
     EOF
   }
-}
-
-resource "random_integer" "ecr_login_trigger" {
-  keepers = {
-    always_run = true
-  }
-  min     = 1
-  max     = 1000000
 }

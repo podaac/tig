@@ -555,5 +555,6 @@ jobs:
           source bin/config.sh ${{ env.TARGET_ENV_LOWERCASE }}
           terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.the_version }}" -out="tfplan"
           terraform apply -auto-approve tfplan
-        silent: true
+        with:
+          silent: true
 

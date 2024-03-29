@@ -22,7 +22,7 @@ resource "null_resource" "upload_ecr_image" {
     interpreter = ["/bin/bash", "-e", "-c"]
     command = <<EOF
       # Docker login
-      echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint} > /dev/null 2>&1
+      $(echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint})
 
       # Docker image upload
       docker pull --platform=linux/arm/v7 ${var.lambda_container_image_uri}

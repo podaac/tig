@@ -179,6 +179,10 @@ def test_get_config_no_setting():
         # exception expected
         pass
 
+class Context:
+    def __init__(self, aws_request_id):
+        self.aws_request_id = aws_request_id
+
 
 @mock_s3
 @patch('requests.get')
@@ -233,7 +237,8 @@ def test_lambda_handler_cumulus(mocked_get):
             is_valid_shema = validate(instance=files, schema=file_schema)
             assert is_valid_shema is None
 
-    output = lambda_handler.handler(event, {})
+    context = Context("fake_request_id")
+    output = lambda_handler.handler(event, context)
 
     for granule in output.get('payload').get('granules'):
         is_valid_shema = validate(instance=granule.get('files'), schema=file_schema)

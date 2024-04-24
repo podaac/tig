@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.11.0]
+
+### Added
+- ** TIG Log Request Id **
+  - Add log to log lambda request id
+- ** Update ECR Deploy **
+  - Update way we deploy ECR images
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+
 ## [0.10.0]
 
 ### Added

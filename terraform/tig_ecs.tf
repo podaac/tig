@@ -12,7 +12,7 @@ module "tig_service" {
 
   count = var.tig_ecs ? 1 : 0
 
-  source = "https://github.com/nasa/cumulus/releases/download/v16.1.2/terraform-aws-cumulus-ecs-service.zip"
+  source = "https://github.com/nasa/cumulus/releases/download/v18.2.0/terraform-aws-cumulus-ecs-service.zip"
   prefix                                = var.prefix
   name                                  = "${local.ecs_resources_name}-ecs-task"
   tags                                  = merge(var.tags, { Project = var.prefix })

@@ -1,5 +1,5 @@
 module "tig" {
-  source = "source will be override by override.py"
+  source = "https://github.com/podaac/tig/releases/download/0.11.0/tig-terraform-0.11.0.zip"
   // Lambda variables
   prefix = var.prefix
   lambda_container_image_uri = "image will be override by override.py"

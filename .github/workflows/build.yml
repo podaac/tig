@@ -223,8 +223,47 @@ jobs:
             --project-name=${{ github.repository }}
     
       #########################################################################
-      # Test
+      # SonarCloud
       #########################################################################
+      - name: SonarCloud Scan
+        id: sonarcloud
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_podaac-tig
+            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+            -Dsonar.sources=podaac/
+            -Dsonar.tests=tests/
+            -Dsonar.projectName=podaac-tig
+            -Dsonar.projectVersion=${{ env.software_version }}
+            -Dsonar.python.version=3.10
+        continue-on-error: true
+      - name: Wait to retry sonarcloud scan
+        if: steps.sonarcloud.outcome == 'failure'
+        run: |
+          sleep 40
+      - name: SonarCloud Scan Retry
+        id: sonarcloud-retry
+        if: steps.sonarcloud.outcome == 'failure'
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_podaac-tig
+            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
+            -Dsonar.sources=podaac/
+            -Dsonar.tests=tests/
+            -Dsonar.projectName=podaac-tig
+            -Dsonar.projectVersion=${{ env.software_version }}
+            -Dsonar.python.version=3.10
+
       # - name: SonarCloud Scan
       #   uses: sonarsource/sonarcloud-github-action@master
       #   env:

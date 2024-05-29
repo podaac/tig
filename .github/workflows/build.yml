@@ -221,65 +221,11 @@ jobs:
           args: >
             --org=${{ secrets.SNYK_ORG_ID }}
             --project-name=${{ github.repository }}
-    
-      #########################################################################
-      # SonarCloud
-      #########################################################################
-      - name: SonarCloud Scan
-        id: sonarcloud
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_podaac-tig
-            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-            -Dsonar.sources=podaac/
-            -Dsonar.tests=tests/
-            -Dsonar.projectName=podaac-tig
-            -Dsonar.projectVersion=${{ env.software_version }}
-            -Dsonar.python.version=3.10
-        continue-on-error: true
-      - name: Wait to retry sonarcloud scan
-        if: steps.sonarcloud.outcome == 'failure'
-        run: |
-          sleep 40
-      - name: SonarCloud Scan Retry
-        id: sonarcloud-retry
-        if: steps.sonarcloud.outcome == 'failure'
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ github.repository_owner }}
-            -Dsonar.projectKey=${{ github.repository_owner }}_podaac-tig
-            -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-            -Dsonar.sources=podaac/
-            -Dsonar.tests=tests/
-            -Dsonar.projectName=podaac-tig
-            -Dsonar.projectVersion=${{ env.software_version }}
-            -Dsonar.python.version=3.10
 
-      # - name: SonarCloud Scan
-      #   uses: sonarsource/sonarcloud-github-action@master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   with:
-      #     args: >
-      #       -Dsonar.organization=${{ github.repository_owner }}
-      #       -Dsonar.projectKey=${{ github.repository_owner }}_l2ss-py
-      #       -Dsonar.python.coverage.reportPaths=build/reports/coverage.xml
-      #       -Dsonar.sources=podaac/
-      #       -Dsonar.tests=tests/
-      #       -Dsonar.projectName=l2ss-py
-      #       -Dsonar.projectVersion=${{ env.software_version }}
-      #       -Dsonar.python.version=3.8,3.9,3.10
 
+      #########################################################################
+      # Test
+      #########################################################################
 
       # This is where tests go
       - name: Run Poetry Tests
@@ -371,16 +317,6 @@ jobs:
       #########################################################################
       # Publish to pypi.org
       #########################################################################
-      # - name: Publish to test.pypi.org
-      #   id: pypi-test-publish
-      #   if: |
-      #     github.ref == 'refs/heads/develop' ||
-      #     startsWith(github.ref, 'refs/heads/release')
-      #   env:
-      #     POETRY_PYPI_TOKEN_TESTPYPI: ${{secrets.TEST_PYPI_API_TOKEN}}
-      #   run: |
-      #     poetry config repositories.testpypi https://test.pypi.org/legacy/
-      #     poetry publish -r testpypi
 
       - name: Publish to test.pypi.org
         id: pypi-test-publish
@@ -400,24 +336,6 @@ jobs:
           POETRY_PYPI_TOKEN_PYPI: ${{secrets.PYPI_API_TOKEN}}
         run: |
           poetry publish --skip-existing
-
-      # - name: Publish to pypi.org
-      #   if: ${{ github.ref == 'refs/heads/main' }}
-      #   id: pypi-publish
-      #   env:
-      #     POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
-      #   run: |
-      #     poetry publish
-
-      #- name: Publish package distributions to PyPI
-      #  id: pypi-publish
-      #  if: |
-      #    github.ref == 'refs/heads/main'    ||
-      #    github.ref == 'refs/heads/develop' ||
-      #    startsWith(github.ref, 'refs/heads/release')
-      #  uses: pypa/gh-action-pypi-publish@release/v1
-      #  with:
-      #    password: ${{ secrets.PYPI_API_TOKEN }}
 
       ## Due to observed delays between upload and availability, wait for the package to become available
       - name: Wait for package

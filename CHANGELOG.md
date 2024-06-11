@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.12.0]
+
+### Added
+### Changed
+- ** TIG Upgrade Cumulus 18 **
+  - Update tig to use cumulus 18 templates, terraform 1.5.3 is necesary for this update.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+
 ## [0.11.0]
 
 ### Added

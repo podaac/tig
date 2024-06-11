@@ -11,7 +11,7 @@ import os
 import logging
 import json
 import matplotlib.colors as col
-import matplotlib.cm as cm
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
@@ -842,12 +842,12 @@ def load_json_palette(palette_dir, palette_name, alpha):
 
     cmap = col.ListedColormap(colors, palette_name)
     try:
-        cm.register_cmap(cmap=cmap)
+        matplotlib.colormaps.register(cmap=cmap)
     except ValueError:
         # palette register via other images
         pass
 
-    return cm.get_cmap(palette_name)
+    return matplotlib.colormaps[palette_name]
 
 
 def vals_to_rgba(vals, min_val, max_val, colormap, transparency=True, no_data=None):

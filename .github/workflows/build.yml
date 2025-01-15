@@ -277,8 +277,8 @@ jobs:
           build-args: |
             SOURCE=${{ env.SOURCE }}
             DIST_PATH=${{ env.DIST_PATH || '' }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache:cache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache:cache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache,mode=max
 
       - name: Deploy Terraform
         if: |

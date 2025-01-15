@@ -24,7 +24,7 @@ resource "null_resource" "upload_ecr_image" {
       # Docker login
       echo ${data.aws_ecr_authorization_token.token.password} | docker login -u AWS --password-stdin ${data.aws_ecr_authorization_token.token.proxy_endpoint} | true
       # Docker image upload
-      docker pull --platform=linux/arm/v7 ${var.lambda_container_image_uri}
+      docker pull --platform=linux/arm64 ${var.lambda_container_image_uri}
       docker tag ${var.lambda_container_image_uri} ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
       docker push ${aws_ecr_repository.lambda-image-repo.repository_url}:${local.ecr_image_tag}
     EOF

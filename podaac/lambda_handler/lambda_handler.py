@@ -362,13 +362,11 @@ class ImageGenerator(Process):
             self.logger.error("Error during image generation: {}".format(ex), exc_info=True)
             raise
 
-
     def _is_valid_input(self, file_):
         """Check if the input file is valid for processing."""
         input_file = f's3://{file_["bucket"]}/{file_["key"]}'
         data_type = file_['type']
         return re.match(self.processing_regex, input_file) or data_type == "data"
-
 
     def _download_file(self, file_):
         """Download the input file from S3."""
@@ -379,7 +377,6 @@ class ImageGenerator(Process):
             self.logger.error("Error downloading file from S3: {}".format(ex), exc_info=True)
             raise
 
-
     def _load_config(self, config_file):
         """Load the configuration file."""
         try:
@@ -388,7 +385,6 @@ class ImageGenerator(Process):
         except Exception as ex:
             self.logger.error("Error loading configuration file: {}".format(ex), exc_info=True)
             raise
-
 
     def _generate_images(self, local_file, config_file, palette_dir, granule_id, variables_config):
         """Generate images using multiprocessing."""
@@ -418,7 +414,6 @@ class ImageGenerator(Process):
 
         return image_list
 
-
     def _collect_process_results(self, parent_connections):
         """Collect results from all child processes."""
         image_list, errors = [], []
@@ -435,7 +430,6 @@ class ImageGenerator(Process):
             conn.close()
 
         return image_list, errors
-
 
     def _upload_images(self, file_, image_list):
         """Upload generated images to S3."""
@@ -459,7 +453,6 @@ class ImageGenerator(Process):
                 raise
 
         return uploaded_files
-
 
     @classmethod
     def handler(cls, event, context=None, path=None, noclean=False):

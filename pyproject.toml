@@ -35,6 +35,7 @@ pylint = "^3.0.3"
 Sphinx = "^7.2.6"
 moto = "^5.0.26"
 mock = "^5.1.0"
+opencv-python = "^4.10.0.84"
 
 [tool.poetry.scripts]
 tig = 'podaac.tig.cli:main'

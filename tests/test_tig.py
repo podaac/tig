@@ -84,7 +84,7 @@ def images_are_similar(
 def get_image_differences(
     image1: Union[str, np.ndarray],
     image2: Union[str, np.ndarray],
-    threshold: float = 0.95
+    threshold: float = 1.0
 ) -> Optional[np.ndarray]:
     """
     Generate a difference mask highlighting areas where images differ.

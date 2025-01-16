@@ -573,6 +573,43 @@ class TIG():
 
         return img_with_neighbor_filled
 
+    def are_all_lon_lat_invalid(self):
+        """
+        Checks if all longitude and latitude values in a NetCDF file are invalid.
+
+        Parameters:
+            file_path (str): Path to the NetCDF file.
+            lon_var (str): Name of the longitude variable in the file.
+            lat_var (str): Name of the latitude variable in the file.
+
+        Returns:
+            bool: True if all longitude and latitude values are invalid, False otherwise.
+        """
+        try:
+            with xr.open_dataset(self.input_file) as ds:
+
+                lon_var = self.config.get('lonVar')
+                lat_var = self.config.get('latVar')
+
+                if lon_var not in ds.variables or lat_var not in ds.variables:
+                    raise ValueError(f"Missing required variables: '{lon_var}' or '{lat_var}' in the file.")
+
+                lon = ds[lon_var]
+                lat = ds[lat_var]
+
+                # Define valid ranges
+                valid_lon = (lon >= -180) & (lon <= 180)
+                valid_lat = (lat >= -90) & (lat <= 90)
+
+                # Check if all values are invalid
+                all_invalid_lon = (~valid_lon).all().item()
+                all_invalid_lat = (~valid_lat).all().item()
+
+                return all_invalid_lon and all_invalid_lat
+        except Exception as e:
+            self.logger.error(f"Error: {e}")
+            raise e
+
     def process_variable(self,
                          var,
                          lon_array,

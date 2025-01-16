@@ -6,6 +6,7 @@ import os
 import re
 from shutil import rmtree
 import multiprocessing as mp
+import traceback
 import requests
 
 import botocore
@@ -42,12 +43,18 @@ def clean_tmp(remove_matlibplot=True):
 
 
 def generate_images(local_file, path, config_file, palette_dir, granule_id, variables, logger, conn):
-    """function to call in multiprocess to generate images"""
-
-    image_gen = tig.TIG(local_file, path, config_file, palette_dir, variables=variables, logger=logger)
-    images = image_gen.generate_images(granule_id=granule_id)
-    conn.send([images])
-    conn.close()
+    """Function to call in multiprocess to generate images"""
+    try:
+        image_gen = tig.TIG(local_file, path, config_file, palette_dir, variables=variables, logger=logger)
+        if image_gen.are_all_lon_lat_invalid():
+            raise Exception("Can't generate images for empty granule")
+        images = image_gen.generate_images(granule_id=granule_id)
+        conn.send(({'status': 'success', 'data': images}, None))
+    except Exception as e:
+        error_traceback = traceback.format_exc()
+        conn.send(({'status': 'error', 'data': None}, (str(e), error_traceback)))
+    finally:
+        conn.close()
 
 
 class ImageGenerator(Process):
@@ -322,71 +329,119 @@ class ImageGenerator(Process):
             raise ex
 
     def image_generate(self, file_, config_file, palette_dir, granule_id):
-        """function to wrap around image generator tig and download and update generated images
+        """
+        Main function to handle image generation workflow.
 
         Parameters
         ----------
-        file_: list
-            dictionary contain data about a granule file
-        config_file:
-            file path of configuration file that was downloaded from s3
-        palette_dir:
-            directory of all the palettes for image generation
-        granule_id:
-            ganule_id of the granule the images are generated for
+        file_: dict
+            Dictionary containing data about a granule file.
+        config_file: str
+            File path of configuration file that was downloaded from S3.
+        palette_dir: str
+            Directory of all the palettes for image generation.
+        granule_id: str
+            Granule ID of the granule the images are generated for.
 
         Returns
-        ----------
+        -------
         list
-            list of dictionary of the image information that was uploaded to s3
+            List of dictionaries with information about images uploaded to S3.
         """
-
-        collection = self.config.get('collection')
-        collection_files = collection.get('files', [])
-        buckets = self.config.get('buckets')
-
-        input_file = f's3://{file_["bucket"]}/{file_["key"]}'
-        data_type = file_['type']
-        uploaded_files = []
-
-        if not re.match(f"{self.processing_regex}", input_file) and data_type != "data":
+        if not self._is_valid_input(file_):
             return None
 
         try:
-            local_file = s3.download(input_file, path=self.path)
+            local_file = self._download_file(file_)
+            variables_config = self._load_config(config_file)
+            image_list = self._generate_images(local_file, config_file, palette_dir, granule_id, variables_config)
+            uploaded_files = self._upload_images(file_, image_list)
+            return uploaded_files
+
+        except Exception as ex:
+            self.logger.error("Error during image generation: {}".format(ex), exc_info=True)
+            raise
+
+
+    def _is_valid_input(self, file_):
+        """Check if the input file is valid for processing."""
+        input_file = f's3://{file_["bucket"]}/{file_["key"]}'
+        data_type = file_['type']
+        return re.match(self.processing_regex, input_file) or data_type == "data"
+
+
+    def _download_file(self, file_):
+        """Download the input file from S3."""
+        input_file = f's3://{file_["bucket"]}/{file_["key"]}'
+        try:
+            return s3.download(input_file, path=self.path)
         except botocore.exceptions.ClientError as ex:
-            self.logger.error("Error downloading image from s3: {}".format(ex), exc_info=True)
-            raise ex
+            self.logger.error("Error downloading file from S3: {}".format(ex), exc_info=True)
+            raise
 
-        with open(config_file) as config_f:
-            read_config = json.load(config_f)
 
-        variables_config = read_config.get('imgVariables', [])
+    def _load_config(self, config_file):
+        """Load the configuration file."""
+        try:
+            with open(config_file) as config_f:
+                return json.load(config_f).get('imgVariables', [])
+        except Exception as ex:
+            self.logger.error("Error loading configuration file: {}".format(ex), exc_info=True)
+            raise
 
-        parent_connections = []
-        processes = []
 
-        var_list = [variables_config[:len(variables_config)//2], variables_config[len(variables_config)//2:]]
+    def _generate_images(self, local_file, config_file, palette_dir, granule_id, variables_config):
+        """Generate images using multiprocessing."""
+        parent_connections, processes = [], []
         var_list = [variables_config]
 
         for variables in var_list:
             if variables:
                 parent_conn, child_conn = mp.Pipe()
                 parent_connections.append(parent_conn)
-
-                process = mp.Process(target=generate_images, args=(local_file, self.path, config_file, palette_dir, granule_id, variables, self.logger, child_conn))
+                process = mp.Process(
+                    target=generate_images,
+                    args=(local_file, self.path, config_file, palette_dir, granule_id, variables, self.logger, child_conn)
+                )
                 processes.append(process)
 
         for process in processes:
             process.start()
 
-        # make sure that all processes have finished
+        image_list, errors = self._collect_process_results(parent_connections)
+
         for process in processes:
             process.join()
 
-        image_list = []
+        if errors:
+            raise Exception("\n".join(errors))
+
+        return image_list
+
+
+    def _collect_process_results(self, parent_connections):
+        """Collect results from all child processes."""
+        image_list, errors = [], []
+
         for parent_connection in parent_connections:
-            image_list += parent_connection.recv()[0]
+            result, error = parent_connection.recv()
+            if error:
+                error_msg, traceback_str = error
+                errors.append(f"Process error: {error_msg}\n{traceback_str}")
+            elif result['status'] == 'success':
+                image_list.extend(result['data'])
+
+        for conn in parent_connections:
+            conn.close()
+
+        return image_list, errors
+
+
+    def _upload_images(self, file_, image_list):
+        """Upload generated images to S3."""
+        uploaded_files = []
+        collection_files = self.config.get('collection', {}).get('files', [])
+        buckets = self.config.get('buckets')
 
         for image_dict in image_list:
             try:
@@ -394,13 +449,17 @@ class ImageGenerator(Process):
                 variable = image_dict.get('variable')
                 group = image_dict.get('group')
                 output_file_basename = os.path.basename(image_file)
-                upload_file_dict = self.generate_file_dictionary(file_, image_file, output_file_basename, collection_files, buckets, variable, group)
+
+                upload_file_dict = self.generate_file_dictionary(
+                    file_, image_file, output_file_basename, collection_files, buckets, variable, group
+                )
                 uploaded_files.append(upload_file_dict)
             except Exception as ex:
-                self.logger.error("Error uploading image from s3: {}".format(ex), exc_info=True)
-                raise ex
+                self.logger.error("Error uploading image to S3: {}".format(ex), exc_info=True)
+                raise
 
         return uploaded_files
+
 
     @classmethod
     def handler(cls, event, context=None, path=None, noclean=False):

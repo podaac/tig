@@ -231,10 +231,11 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         if: |
-          steps.pypi-test-publish.conclusion == 'success' ||
-          steps.pypi-publish.conclusion == 'success' ||
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main'    ||
+          startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
+          github.event.head_commit.message == '/deploy uat' 
         id: meta
         uses: docker/metadata-action@v5
         with:

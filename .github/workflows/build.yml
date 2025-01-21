@@ -65,7 +65,8 @@ jobs:
         run: |
           current_version=$(poetry version -s)
           base_version=$(echo "$current_version" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+')
-          
+          pyproject_name=$(poetry version | awk '{print $1}')
+
           # Version calculation based on branch
           if [[ "${{ github.ref }}" =~ ^refs/heads/(issue|feature|dependabot)/ ]]; then
             new_version="${base_version%%-*}+$(git rev-parse --short HEAD)"
@@ -86,6 +87,7 @@ jobs:
           fi
           
           echo "new_version=${new_version}" >> $GITHUB_ENV
+          echo "pyproject_name=${pyproject_name}" >> $GITHUB_ENV
           poetry version ${new_version}
 
       - name: Run Snyk as a blocking step
@@ -193,8 +195,9 @@ jobs:
 
       - name: Wait for package
         if: |
-          steps.pypi-test-publish.conclusion == 'success' ||
-          steps.pypi-publish.conclusion == 'success'
+          github.ref == 'refs/heads/develop' ||
+          github.ref == 'refs/heads/main' ||
+          startsWith(github.ref, 'refs/heads/release/')
         run: |
           pip install tenacity logging 
           python3 ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.new_version }}

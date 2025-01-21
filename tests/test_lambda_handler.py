@@ -7,7 +7,7 @@ import pytest
 from jsonschema import validate
 
 from podaac.lambda_handler import lambda_handler
-from moto import mock_s3
+from moto import mock_aws
 from mock import patch, Mock
 
 file_schema = {
@@ -87,7 +87,7 @@ def test_get_file_type():
     assert file_type == 'data'
 
 
-@mock_s3
+@mock_aws
 def test_lambda_handler_upload():
     """Test lambda handler function upload_file_to_s3 uploads files to s3"""
 
@@ -108,7 +108,7 @@ def test_lambda_handler_upload():
     aws_s3.Object(bucket, os.path.basename(nc_file)).load()
 
 
-@mock_s3
+@mock_aws
 def test_get_config():
     """Test lambda handler function upload_file_to_s3 uploads files to s3"""
     aws_s3 = boto3.resource('s3', region_name='us-east-1')
@@ -184,7 +184,7 @@ class Context:
         self.aws_request_id = aws_request_id
 
 
-@mock_s3
+@mock_aws
 @patch('requests.get')
 def test_lambda_handler_cumulus(mocked_get):
     """Test lambda handler to run through cumulus handler"""

@@ -5,26 +5,121 @@ test_tig.py
 
 Test TIG functionality.
 """
-import filecmp
+import logging
 import os
 import shutil
 import unittest
-from podaac.tig import tig
-from skimage.metrics import structural_similarity as ssim
-from PIL import Image
+from typing import Union, Tuple, Optional
+
+import cv2
+import filecmp
 import numpy as np
+from PIL import Image
+from skimage.metrics import structural_similarity as ssim
 
+from podaac.tig import tig
 
-def images_are_similar(image1, image2, threshold=1):
-    # Convert images to NumPy arrays
-    array_image1 = np.array(Image.open(image1).convert('L'))
-    array_image2 = np.array(Image.open(image2).convert('L'))
+def images_are_similar(
+    image1: Union[str, np.ndarray], 
+    image2: Union[str, np.ndarray], 
+    threshold: float = 0.95,
+    resize_to: Optional[Tuple[int, int]] = None,
+) -> Tuple[bool, float]:
+    """
+    Compare two images using Structural Similarity Index (SSIM) and optional preprocessing.
+    
+    Args:
+        image1: Path to first image or numpy array
+        image2: Path to second image or numpy array
+        threshold: Similarity threshold (0 to 1), higher means more similar
+        resize_to: Optional tuple of (width, height) to resize images before comparison
+        
+    Returns:
+        Tuple of (bool indicating if images are similar, float similarity score)
+        
+    Raises:
+        ValueError: If images cannot be opened or processed
+        TypeError: If input types are invalid
+    """
+    try:
+        # Convert inputs to numpy arrays if they're file paths
+        if isinstance(image1, str):
+            array_image1 = np.array(Image.open(image1).convert('L'))
+        elif isinstance(image1, np.ndarray):
+            array_image1 = image1 if len(image1.shape) == 2 else cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+        else:
+            raise TypeError("image1 must be a file path or numpy array")
+            
+        if isinstance(image2, str):
+            array_image2 = np.array(Image.open(image2).convert('L'))
+        elif isinstance(image2, np.ndarray):
+            array_image2 = image2 if len(image2.shape) == 2 else cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+        else:
+            raise TypeError("image2 must be a file path or numpy array")
 
-    # Compute Structural Similarity Index (SSI)
-    similarity_index, _ = ssim(array_image1, array_image2, full=True)
+        # Resize images if specified
+        if resize_to:
+            array_image1 = cv2.resize(array_image1, resize_to, interpolation=cv2.INTER_AREA)
+            array_image2 = cv2.resize(array_image2, resize_to, interpolation=cv2.INTER_AREA)
+        
+        # Ensure images are same size
+        if array_image1.shape != array_image2.shape:
+            raise ValueError(
+                f"Images must be same size. Got {array_image1.shape} and {array_image2.shape}"
+            )
 
-    return similarity_index >= threshold
+        # Apply basic preprocessing
+        array_image1 = cv2.equalizeHist(array_image1)  # Normalize contrast
+        array_image2 = cv2.equalizeHist(array_image2)
+        
+        # Compute SSIM
+        similarity_score = ssim(array_image1, array_image2)
+        
+        return similarity_score >= threshold, similarity_score
 
+    except Exception as e:
+        logging.error(f"Error comparing images: {str(e)}")
+        raise
+
+def get_image_differences(
+    image1: Union[str, np.ndarray],
+    image2: Union[str, np.ndarray],
+    threshold: float = 1.0
+) -> Optional[np.ndarray]:
+    """
+    Generate a difference mask highlighting areas where images differ.
+    
+    Args:
+        image1: Path to first image or numpy array
+        image2: Path to second image or numpy array
+        threshold: Similarity threshold for considering pixels different
+        
+    Returns:
+        Numpy array containing the difference mask, or None if error occurs
+    """
+    try:
+        # Convert images to arrays using the main function's logic
+        if isinstance(image1, str):
+            array_image1 = np.array(Image.open(image1).convert('L'))
+        else:
+            array_image1 = image1 if len(image1.shape) == 2 else cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
+            
+        if isinstance(image2, str):
+            array_image2 = np.array(Image.open(image2).convert('L'))
+        else:
+            array_image2 = image2 if len(image2.shape) == 2 else cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
+
+        # Compute absolute difference
+        diff = cv2.absdiff(array_image1, array_image2)
+        
+        # Threshold to create binary mask of significant differences
+        _, mask = cv2.threshold(diff, int(255 * (1 - threshold)), 255, cv2.THRESH_BINARY)
+        
+        return mask
+        
+    except Exception as e:
+        logging.error(f"Error generating difference mask: {str(e)}")
+        return None
 
 class TestTIG(unittest.TestCase):
 

@@ -4,6 +4,7 @@ FROM public.ecr.aws/lambda/python:3.10-arm64
 
 # Include global arg in this stage of the build
 ARG SOURCE
+ARG DIST_PATH
 
 RUN yum -q -y install gcc
 

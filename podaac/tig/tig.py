@@ -457,6 +457,9 @@ class TIG():
         width_deg = region[3] - region[2]
         self.region = Region(region)
 
+        if self.are_all_lon_lat_invalid(lon_array, lat_array):
+            raise Exception("Can't generate images for empty granule")
+
         output_dimensions = (int(height_deg * self.ppd), int(width_deg * self.ppd))
         (self.rows, self.cols) = output_dimensions
 
@@ -465,9 +468,6 @@ class TIG():
 
         if self.variables is None:
             self.variables = self.config.get("imgVariables", [])
-
-        if self.are_all_lon_lat_invalid(lon_array, lat_array):
-            raise Exception("Can't generate images for empty granule")
 
         for var in self.variables:
 

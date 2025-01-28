@@ -578,29 +578,24 @@ class TIG():
 
     def are_all_lon_lat_invalid(self, lon, lat):
         """
-        Checks if all longitude and latitude values in a NetCDF file are invalid.
+        Checks if all coordinate pairs contain at least one invalid value.
 
         Parameters:
-            file_path (str): Path to the NetCDF file.
-            lon_var (str): Name of the longitude variable in the file.
-            lat_var (str): Name of the latitude variable in the file.
-
+            lon (array-like): Array of longitude values.
+            lat (array-like): Array of latitude values.
         Returns:
-            bool: True if all longitude and latitude values are invalid, False otherwise.
+            bool: True if all coordinate pairs have at least one invalid value,
+                  False if there exists at least one valid coordinate pair.
         """
         try:
             # Define valid ranges
-            valid_lon = (lon >= -180) & (lon <= 180)
-            valid_lat = (lat >= -90) & (lat <= 90)
-
-            # Check if all values are invalid
-            all_invalid_lon = (~valid_lon).all().item()
-            all_invalid_lat = (~valid_lat).all().item()
-
-            return all_invalid_lon and all_invalid_lat
+            valid_lon_mask = (lon >= -180) & (lon <= 180)
+            valid_lat_mask = (lat >= -90) & (lat <= 90)
+            # Check if any pair is completely valid
+            valid_pairs = valid_lon_mask & valid_lat_mask
+            return not valid_pairs.any()
         except Exception as e:
-            self.logger.error(f"Error: {e}")
-            raise e
+            raise RuntimeError(f"Error checking longitude/latitude validity: {e}") from e
 
     def process_variable(self,
                          var,

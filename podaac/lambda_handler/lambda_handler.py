@@ -46,8 +46,6 @@ def generate_images(local_file, path, config_file, palette_dir, granule_id, vari
     """Function to call in multiprocess to generate images"""
     try:
         image_gen = tig.TIG(local_file, path, config_file, palette_dir, variables=variables, logger=logger)
-        if image_gen.are_all_lon_lat_invalid():
-            raise Exception("Can't generate images for empty granule")
         images = image_gen.generate_images(granule_id=granule_id)
         conn.send(({'status': 'success', 'data': images}, None))
     except Exception as e:

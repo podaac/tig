@@ -8,8 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
-- ** Check lon and lat data **
-  - Made function to check lon and lat data are valid if not then it should fail quickly.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+
+## [0.13.0]
+
+### Added
+### Changed
+- ** Check input lon and lat data **
+  - Made function to check input lon and lat data are valid if not then it should fail quickly.
 - ** Versioning Update **
   - Update github actions versioning
 - ** Better Error Message **

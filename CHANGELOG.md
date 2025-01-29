@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+- ** Fix lon and lat check*
+  Fix the checking of longitude and latitude data for empty granules
 ### Security
 
 

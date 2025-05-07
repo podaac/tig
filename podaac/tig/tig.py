@@ -460,8 +460,7 @@ class TIG():
         if self.are_all_lon_lat_invalid(lon_array, lat_array):
             raise Exception("Can't generate images for empty granule")
 
-        output_dimensions = (int(height_deg * self.ppd), int(width_deg * self.ppd))
-        (self.rows, self.cols) = output_dimensions
+        self.rows, self.cols = max(1, int(height_deg * self.ppd)), max(1, int(width_deg * self.ppd))
 
         # Process each variable configured for the dataset
         output_images = []

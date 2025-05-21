@@ -9,10 +9,10 @@
   - [tig Input](#tig-input)
   - [tig Output](#tig-output)
 - [CLI Commands](#cli-commands)
+- [Python Usage](#python-usage)
 
 ## Overview
-   tig is built to be used within Cumulus ecosystem.  It is depending on cumulus CMA ([Cumulus Documentation](https://nasa.github.io/cumulus)).
-   Please refer to the [Usage](#usage) section for inputs and outputs. TIG itself is a lambda function which runs on top of CMA as its lambda layer.
+   tig generates granule-level thumbnail images for one or several variables within the granule (currently works with netCDF and HDF formats). tig is built to be used within Cumulus ecosystem. It is depending on cumulus CMA ([Cumulus Documentation](https://nasa.github.io/cumulus)). Please refer to the [Usage](#usage) section for inputs and outputs. TIG itself is a lambda function which runs on top of CMA as its lambda layer.
 
 ## Install poetry (python dependency manager)
    Install poetry following the directions here: https://python-poetry.org/docs/#installation
@@ -264,5 +264,126 @@ module output variables
           "name": "20200101000000-JPL-L2P_GHRSST-SSTskin-MODIS_A-D-v02.0-fv01.0.png",
           "type": "metadata"
         }
-      ],
+      ]
+    }
+  ]
 }
+```
+
+## Python Usage
+
+### Installation
+
+#### pip / pypi method
+
+The podaac-tig library is in https://pypi.org/project/podaac-tig/, so pypi should be added to your `~/pip/pip.conf` file, e.g. add the following lines:
+
+```
+[global]
+index-url = https://pypi.org/simple
+trusted-host = pypi.org
+```
+
+Then, the podaac-tig library can be installed:
+
+```bash
+pip install podaac-tig==0.10.0
+```
+
+and imported:
+
+```
+from podaac.tig import tig
+```
+
+#### repo cloning method
+
+```
+git clone -b release/0.10.0 git@github.com:podaac/tig.git
+```
+
+Then the module can be imported:
+```
+# Imports packages directly from the tig repo:
+sys.path.append(os.path.abspath(os.curdir) + "/tig/podaac")
+from tig import tig
+```
+
+### Example Usage
+
+First create a TIG instance corresponding to the data granule to create thumbnails for:
+
+```
+image_gen = tig.TIG(input_file, output_dir, config_file, palette_dir)
+```
+
+where `input_file` (string) is the path to the data granule, `output_dir` (string) is the
+folder to save the images to, `config_file` (string) is the path to the configuration file
+with parameters needed by tig (see [config file section](#configuration-file)), and `palette_dir` is the path to color palettes used for the image generation (more on this below).
+
+Then create thumbnails for the variables listed in the configuration file, one .png file
+per variable:
+
+```
+image_gen.generate_images(granule_id=granule_id)
+```
+
+where `granule_id` (string) is the filename of the granule (note this is the name only, as 
+opposed to the full path).
+
+For the `palette_dir`, an example folder can be found in the [forge-tig-configuration](https://github.com/podaac/forge-tig-configuration) repository, e.g. 
+
+```
+!git clone git@github.com:podaac/forge-tig-configuration.git
+palette_dir = "./forge-tig-configuration/palettes"  # Path to color palettes in the forge-tig-configuration repo.
+```
+
+### Configuration File
+
+The configuration file is a JSON that acts as a small metadata sidecar file for all granules in a collection (so only one config file is needed per collection). The easiest way to create the configuration file is using the [forge-tig-configuration module](https://github.com/podaac/forge-tig-configuration), but it can also be created manually, e.g.
+
+```json
+{
+    "shortName": "ASCATB_ESDR_L2_WSDERIV_V1.0",
+    "latVar": "lat_res12",
+    "lonVar": "lon_res12",
+    "is360": true,
+    "imgVariables": [
+        {
+            "id": "en_wind_divergence_res12",
+            "title": "Divergence of equivalent neutral wind, over approximate 12.5 km diameter region",
+            "units": "s-1",
+            "min": -1.0,
+            "max": 1.0,
+            "palette": "paletteMedspirationIndexed"
+        },
+        {
+            "id": "stress_curl_res12",
+            "title": "vorticity of wind stress, over approximate 12.5 km diameter region",
+            "units": "N m-3",
+            "min": -1.0,
+            "max": 1.0,
+            "palette": "paletteMedspirationIndexed"
+        }
+    ],
+    "image": {
+        "ppd": 8,
+        "res": 8
+    }
+}
+```
+
+#### Description of fields
+* **`shortName`** (string, required): Collection short name.
+* **`lonVar`** (string, required): Longitude variable in the dataset include group if in one.
+* **`latVar`** (string, required): Latitude variable in the dataset include group if in one.
+* **`is360`** (boolean, required, default: False): Indicates if the data is in 360 format.
+* **`imgVariables`** (list, required): A list of dictionaries describing the variables to create thumbnails for. One dictionary per variable with the following key / value pairs:
+  * **`"id"`** (string): Variable name as it appears in the file.
+  * **`"title"`** (string): More descriptive name of the variable. E.g. typically the `long_name` from the variable attributes.
+  * **`"units"`** (string): Variable units.
+  * **`"min"`**, **`"max"`** (float's): Minimum / maximum values to use for colorscale. Note these can coincide with the `min` / `max` variable attributes, but can also be tweaked to improve the color range of the images.
+  * **`"palette"`** (string): Color palette to use. Currently the only option is "paletteMedspirationIndexed".
+* **`image`** (dict): Specifies parameters for image appearance. Includes the following key / value pairs:
+  * **`"ppd"`** (int): Fills surrounding pixels with same value as the nearest pixel. If the output image is faint, increasing this value may fix it. Typical values are in the range 4 - 16.
+  * **`"res"`** (int): Image resolution. If the output image is faint, decreasing this value may fix it. Typical values are in the range 4 - 16.

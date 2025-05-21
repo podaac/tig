@@ -319,11 +319,11 @@ image_gen.generate_images(granule_id=granule_id)
 ```
 
 where the parameters are:
-`input_file` (string): The path to the data granule.
-`output_dir` (string): Path to the folder in which to save the images.
-`config_file` (string) Path to the configuration file containing parameters needed by tig (see [config file section](#configuration-file)).
-`palette_dir` (string): The path to color palettes used for the image generation (more on this below).
-`granule_id` (string): The filename of the granule (note this is the name only, as opposed to the full path).
+* **`input_file`** (string): The path to the data granule.
+* **`output_dir`** (string): Path to the folder in which to save the images.
+* **`config_file`** (string) Path to the configuration file containing parameters needed by tig (see [config file section](#configuration-file)).
+* **`palette_dir`** (string): The path to color palettes used for the image generation (more on this below).
+* **`granule_id`** (string): The filename of the granule (note this is the name only, as opposed to the full path).
 
 For the `palette_dir`, one can be taken from the [forge-tig-configuration](https://github.com/podaac/forge-tig-configuration) repository, e.g. 
 
@@ -334,7 +334,7 @@ palette_dir = "./forge-tig-configuration/palettes"  # Path to color palettes in 
 
 ### Configuration File
 
-The configuration file is a JSON that acts as a small metadata sidecar file for all granules in a collection (so only one config file is needed per collection). The easiest way to create the configuration file is using the <a href="https://github.com/podaac/forge-tig-configuration" target="_blank">forge-tig-configuration module</a>, but it can also be created manually, e.g.:
+The configuration file is a JSON that acts as a small metadata sidecar file for all granules in a collection (so only one config file is needed per collection). The easiest way to create the configuration file is using the [forge-tig-configuration module](https://github.com/podaac/forge-tig-configuration), but it can also be created manually, e.g.:
 
 ```json
 {

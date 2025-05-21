@@ -274,7 +274,7 @@ module output variables
 
 ### Installation
 
-#### pip / pypi method
+#### **1. pip / pypi method**
 
 The podaac-tig library is in https://pypi.org/project/podaac-tig/, so pypi should be added to your `~/pip/pip.conf` file, e.g. add the following lines:
 
@@ -296,7 +296,7 @@ and imported:
 from podaac.tig import tig
 ```
 
-#### repo cloning method
+#### **2. repo cloning method**
 
 ```
 git clone -b release/0.10.0 git@github.com:podaac/tig.git
@@ -311,27 +311,21 @@ from tig import tig
 
 ### Example Usage
 
-First create a TIG instance corresponding to the data granule to create thumbnails for:
+For the desired granule to create thumbnails for, create a TIG instance and then use it to generate the images:
 
 ```
 image_gen = tig.TIG(input_file, output_dir, config_file, palette_dir)
-```
-
-where `input_file` (string) is the path to the data granule, `output_dir` (string) is the
-folder to save the images to, `config_file` (string) is the path to the configuration file
-with parameters needed by tig (see [config file section](#configuration-file)), and `palette_dir` is the path to color palettes used for the image generation (more on this below).
-
-Then create thumbnails for the variables listed in the configuration file, one .png file
-per variable:
-
-```
 image_gen.generate_images(granule_id=granule_id)
 ```
 
-where `granule_id` (string) is the filename of the granule (note this is the name only, as 
-opposed to the full path).
+where the parameters are:
+`input_file` (string): The path to the data granule.
+`output_dir` (string): Path to the folder in which to save the images.
+`config_file` (string) Path to the configuration file containing parameters needed by tig (see [config file section](#configuration-file)).
+`palette_dir` (string): The path to color palettes used for the image generation (more on this below).
+`granule_id` (string): The filename of the granule (note this is the name only, as opposed to the full path).
 
-For the `palette_dir`, an example folder can be found in the [forge-tig-configuration](https://github.com/podaac/forge-tig-configuration) repository, e.g. 
+For the `palette_dir`, one can be taken from the [forge-tig-configuration](https://github.com/podaac/forge-tig-configuration) repository, e.g. 
 
 ```
 !git clone git@github.com:podaac/forge-tig-configuration.git
@@ -340,7 +334,7 @@ palette_dir = "./forge-tig-configuration/palettes"  # Path to color palettes in 
 
 ### Configuration File
 
-The configuration file is a JSON that acts as a small metadata sidecar file for all granules in a collection (so only one config file is needed per collection). The easiest way to create the configuration file is using the [forge-tig-configuration module](https://github.com/podaac/forge-tig-configuration), but it can also be created manually, e.g.
+The configuration file is a JSON that acts as a small metadata sidecar file for all granules in a collection (so only one config file is needed per collection). The easiest way to create the configuration file is using the <a href="https://github.com/podaac/forge-tig-configuration" target="_blank">forge-tig-configuration module</a>, but it can also be created manually, e.g.:
 
 ```json
 {

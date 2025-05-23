@@ -377,7 +377,8 @@ The configuration file is a JSON that acts as a small metadata sidecar file for 
   * **`"title"`** (string): More descriptive name of the variable. E.g. typically the `long_name` from the variable attributes.
   * **`"units"`** (string): Variable units.
   * **`"min"`**, **`"max"`** (float's): Minimum / maximum values to use for colorscale. Note these can coincide with the `min` / `max` variable attributes, but can also be tweaked to improve the color range of the images.
-  * **`"palette"`** (string): Color palette to use. Currently the only option is "paletteMedspirationIndexed".
+  * **`"palette"`** (string): Name of color palette to use. A folder of color palettes can be found in the ["palettes" folder of the forge-tig-configuration package](https://github.com/podaac/forge-tig-configuration/tree/main/palettes).
 * **`image`** (dict): Specifies parameters for image appearance. Includes the following key / value pairs:
   * **`"ppd"`** (int): Fills surrounding pixels with same value as the nearest pixel. If the output image is faint, increasing this value may fix it. Typical values are in the range 4 - 16.
   * **`"res"`** (int): Image resolution. If the output image is faint, decreasing this value may fix it. Typical values are in the range 4 - 16.
+  

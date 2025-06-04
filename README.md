@@ -276,7 +276,7 @@ module output variables
 
 #### **1. pip / pypi method**
 
-The podaac-tig library is in https://pypi.org/project/podaac-tig/, so pypi should be added to your `~/pip/pip.conf` file, e.g. add the following lines:
+The podaac-thumbnail-generator library is in https://pypi.org/project/podaac-thumbnail-generator/, so pypi should be added to your `~/pip/pip.conf` file, e.g. add the following lines:
 
 ```
 [global]
@@ -284,10 +284,10 @@ index-url = https://pypi.org/simple
 trusted-host = pypi.org
 ```
 
-Then, the podaac-tig library can be installed:
+Then, the podaac-thumbnail-generator library can be installed:
 
 ```bash
-pip install podaac-tig==0.10.0
+pip install podaac-thumbnail-generator
 ```
 
 and imported:

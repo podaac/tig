@@ -35,7 +35,7 @@ jobs:
           echo "software_version=$(poetry version | awk '{print $2}')" >> $GITHUB_ENV
       - name: Commit Version Bump
         run: |
-          git config --global user.name 'podaac-tig bot'
-          git config --global user.email 'podaac-tig@noreply.github.com'
+          git config --global user.name 'podaac-thumbnail-generator bot'
+          git config --global user.email 'podaac-thumbnail-generator@noreply.github.com'
           git commit -am "/version ${{ env.software_version }}"
           git push

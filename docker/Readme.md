@@ -22,7 +22,7 @@ and install it into the Docker image. The docker tag of the built image will be 
 Example:
 
 ```shell script
-./docker/build-docker.sh -n podaac-tig -v 0.1.0
+./docker/build-docker.sh -n podaac-thumbnail-generator -v 0.1.0
 ```
 
 ### Building from local code
@@ -47,7 +47,7 @@ The docker tag of the built image will be returned from the script.
 Example:
 
 ```shell script
-./docker/build-docker.sh -n podaac-tig -v 0.1.0 --local
+./docker/build-docker.sh -n podaac-thumbnail-generator -v 0.1.0 --local
 ```
 
 ## Running
@@ -67,6 +67,6 @@ The easiest way to use the `push-docker-ecr.sh` script is to first call `build-d
 Example:
 
 ```shell script
-export docker_tag=$(./docker/build-docker.sh -n podaac-tig -v 0.1.0)
+export docker_tag=$(./docker/build-docker.sh -n podaac-thumbnail-generator -v 0.1.0)
 ./docker/push-docker-ecr.sh -v sit -t $docker_tag
 ```

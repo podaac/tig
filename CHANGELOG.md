@@ -14,6 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 
+## [0.13.2]
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+  - [issue/79] (https://github.com/podaac/hitide/issues/79): Fix calculating how big the image resolution is, possibly size is 0 so make sure its at least 1
+### Security
+
+
 ## [0.13.1]
 
 ### Added

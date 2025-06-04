@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "podaac-tig-py"
+name = "podaac-thumbnail-generator"
 version = "0.13.3a3"
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]

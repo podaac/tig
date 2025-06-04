@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.pardir, 'scripts')))
 
 # -- Project information -----------------------------------------------------
 
-project = "podaac-tig"
+project = "podaac-thumbnail-generator"
 author = "PO.DAAC"
 version = "0.1.0"
 

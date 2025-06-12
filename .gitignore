@@ -147,3 +147,6 @@ build-info.yaml
 result_images
 requirements.txt
 snyk-report.json
+
+#Regression Test Folder
+regression_test/regression_output/

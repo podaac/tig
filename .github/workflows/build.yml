@@ -112,6 +112,14 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      - name: Run Snyk on Python
+        run: |
+          snyk monitor \
+            --org=${{ secrets.SNYK_ORG_ID }} \
+            --project-name=${{ github.repository }} \
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
       #- name: Run Snyk as a blocking step
       #  uses: snyk/actions/python@master
       #  env:
@@ -124,15 +132,15 @@ jobs:
       #        --severity-threshold=high
       #        --fail-on=all
 
-      - name: Run Snyk on Python
-        uses: snyk/actions/python@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: >
-            --org=${{ secrets.SNYK_ORG_ID }}
-            --project-name=${{ github.repository }}
+      #- name: Run Snyk on Python
+      #  uses: snyk/actions/python@master
+      #  env:
+      #    SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #  with:
+      #    command: monitor
+      #    args: >
+      #      --org=${{ secrets.SNYK_ORG_ID }}
+      #      --project-name=${{ github.repository }}
   
       - name: Run Poetry
         run: |

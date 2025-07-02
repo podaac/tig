@@ -96,17 +96,33 @@ jobs:
           echo "pyproject_name=${pyproject_name}" >> $GITHUB_ENV
           poetry version ${new_version}
 
+      - name: Download Snyk CLI (ARM64)
+        run: |
+          curl -Lo snyk https://static.snyk.io/cli/latest/snyk-linux-arm64
+          chmod +x snyk
+          sudo mv snyk /usr/local/bin
+
       - name: Run Snyk as a blocking step
-        uses: snyk/actions/python@master
+        run: |
+          snyk test \
+            --org=${{ secrets.SNYK_ORG_ID }} \
+            --project-name=${{ github.repository }} \
+            --severity-threshold=high \
+            --fail-on=all
         env:
-            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-          args: >
-              --org=${{ secrets.SNYK_ORG_ID }}
-              --project-name=${{ github.repository }}
-              --severity-threshold=high
-              --fail-on=all
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      #- name: Run Snyk as a blocking step
+      #  uses: snyk/actions/python@master
+      #  env:
+      #      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #  with:
+      #    command: test
+      #    args: >
+      #       --org=${{ secrets.SNYK_ORG_ID }}
+      #        --project-name=${{ github.repository }}
+      #        --severity-threshold=high
+      #        --fail-on=all
 
       - name: Run Snyk on Python
         uses: snyk/actions/python@master

@@ -6,8 +6,27 @@ FROM public.ecr.aws/lambda/python:3.10-arm64
 ARG SOURCE
 ARG DIST_PATH
 
-RUN yum -q -y install gcc
-
+RUN yum -y update && \
+    yum -y install \
+        gcc \
+        zlib-devel \
+        libjpeg-devel \
+        libpng-devel \
+        freetype-devel \
+        make \
+        patch \
+        bzip2 \
+        xz-devel \
+        tar \
+        gzip \
+        unzip \
+        findutils \
+        which \
+        openssl-devel \
+        bzip2-devel \
+        readline-devel \
+        sqlite-devel
+        
 # Create function directory
 # RUN mkdir -p ${FUNCTION_DIR}
 # WORKDIR ${FUNCTION_DIR}

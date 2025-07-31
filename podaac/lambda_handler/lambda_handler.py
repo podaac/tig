@@ -7,8 +7,10 @@ import re
 from shutil import rmtree
 import multiprocessing as mp
 import traceback
+import fnmatch
 import requests
 
+import boto3
 import botocore
 from cumulus_logger import CumulusLogger
 from cumulus_process import Process, s3
@@ -116,8 +118,36 @@ class ImageGenerator(Process):
         str
             full path of the downloaded file
         """
+        # Extract bucket name from S3 URI
+        bucket_name = s3file.split('/')[2]  # s3://bucket-name/path/to/file
+
+        # Check if we need to assume a role for this bucket
+        role_arn = self._get_role_for_bucket(bucket_name)
+
         try:
+            if role_arn:
+                self.logger.info(f"Assuming role {role_arn} for download from bucket {bucket_name}")
+                credentials = self._assume_role(role_arn)
+
+                # Create a new S3 client with assumed role credentials
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=credentials['aws_access_key_id'],
+                    aws_secret_access_key=credentials['aws_secret_access_key'],
+                    aws_session_token=credentials['aws_session_token']
+                )
+
+                # Extract key from S3 URI
+                key = '/'.join(s3file.split('/')[3:])  # path/to/file
+                filename = os.path.basename(key)
+                local_path = os.path.join(working_dir, filename)
+
+                # Download using the custom client
+                s3_client.download_file(bucket_name, key, local_path)
+                return local_path
+
             return s3.download(s3file, working_dir)
+
         except botocore.exceptions.ClientError as ex:
             self.logger.error("Error downloading file %s: %s" % (s3file, working_dir), exc_info=True)
             raise ex
@@ -132,10 +162,41 @@ class ImageGenerator(Process):
         uri: str
             s3 string of file location
         """
+        # Extract bucket name from S3 URI
+        bucket_name = uri.split('/')[2]  # s3://bucket-name/path/to/file
+
+        # Check if we need to assume a role for this bucket
+        role_arn = self._get_role_for_bucket(bucket_name)
+
         try:
+            if role_arn:
+                self.logger.info(f"Assuming role {role_arn} for upload to bucket {bucket_name}")
+                credentials = self._assume_role(role_arn)
+
+                # Create a new S3 client with assumed role credentials
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=credentials['aws_access_key_id'],
+                    aws_secret_access_key=credentials['aws_secret_access_key'],
+                    aws_session_token=credentials['aws_session_token']
+                )
+
+                # Extract key from S3 URI
+                key = '/'.join(uri.split('/')[3:])  # path/to/file
+
+                # Upload using the custom client
+                s3_client.upload_file(
+                    filename,
+                    bucket_name,
+                    key,
+                    ExtraArgs={"ACL": "bucket-owner-full-control"}
+                )
+                return uri
+
             return s3.upload(filename, uri, extra={"ACL": "bucket-owner-full-control"})
+
         except botocore.exceptions.ClientError as ex:
-            self.logger.error("Error uploading file %s: %s" % (os.path.basename(os.path.basename(filename)), str(ex)), exc_info=True)
+            self.logger.error("Error uploading file %s: %s" % (os.path.basename(filename), str(ex)), exc_info=True)
             raise ex
 
     @staticmethod
@@ -366,11 +427,147 @@ class ImageGenerator(Process):
         data_type = file_['type']
         return re.match(self.processing_regex, input_file) or data_type == "data"
 
+    def _get_role_for_bucket(self, bucket_name):
+        """Get the appropriate role to assume for a given bucket.
+
+        The role mappings should be configured in self.config['role_mappings'] as:
+        {
+            "exact-bucket-name": "arn:aws:iam::123456789012:role/MyRole",
+            "bucket-prefix-*": "arn:aws:iam::123456789012:role/PrefixRole",
+            "*bucket-suffix": "arn:aws:iam::123456789012:role/SuffixRole",
+            "bucket-*pattern*": "arn:aws:iam::123456789012:role/PatternRole",
+            "regex-pattern": "arn:aws:iam::123456789012:role/RegexRole"
+        }
+
+        Supports exact matches, wildcard patterns, and regular expression matching.
+
+        Parameters
+        ----------
+        bucket_name: str
+            Name of the S3 bucket
+
+        Returns
+        -------
+        str or None
+            Role ARN to assume, or None if no role is needed
+        """
+        role_mappings = self.config.get('role_mappings', {})
+
+        # Check for exact bucket match first (fastest)
+        if bucket_name in role_mappings:
+            return role_mappings[bucket_name]
+
+        # Check pattern matches
+        for pattern, role in role_mappings.items():
+            # Skip exact matches (already checked above)
+            if pattern == bucket_name:
+                continue
+
+            # Handle regex patterns
+            if self._is_regex_pattern(pattern):
+                try:
+                    if re.match(pattern, bucket_name):
+                        return role
+                except re.error as ex:
+                    self.logger.warning(f"Invalid regex pattern '{pattern}': {ex}")
+                    continue
+            # Handle simple wildcard patterns
+            elif pattern.endswith('*'):
+                prefix = pattern[:-1]
+                if bucket_name.startswith(prefix):
+                    return role
+            elif pattern.startswith('*'):
+                suffix = pattern[1:]
+                if bucket_name.endswith(suffix):
+                    return role
+            elif '*' in pattern:
+                # Handle complex wildcard patterns
+                if fnmatch.fnmatch(bucket_name, pattern):
+                    return role
+
+        return None
+
+    def _is_regex_pattern(self, pattern):
+        """Check if a pattern is a regex pattern for optimization.
+
+        Parameters
+        ----------
+        pattern: str
+            Pattern to check
+
+        Returns
+        -------
+        bool
+            True if pattern is a regex pattern
+        """
+        # Quick checks for common regex indicators
+        return (pattern.startswith('^') or
+                pattern.endswith('$') or
+                '(' in pattern or
+                '|' in pattern or
+                '[' in pattern or
+                '\\' in pattern)
+
+    def _assume_role(self, role_arn):
+        """Assume an IAM role and return credentials.
+
+        Parameters
+        ----------
+        role_arn: str
+            ARN of the role to assume
+
+        Returns
+        -------
+        dict
+            Credentials dictionary with access_key, secret_key, and token
+        """
+        try:
+            sts_client = boto3.client('sts')
+            response = sts_client.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName='ImageGeneratorSession'
+            )
+
+            credentials = response['Credentials']
+            return {
+                'aws_access_key_id': credentials['AccessKeyId'],
+                'aws_secret_access_key': credentials['SecretAccessKey'],
+                'aws_session_token': credentials['SessionToken']
+            }
+        except Exception as ex:
+            self.logger.error(f"Error assuming role {role_arn}: {ex}", exc_info=True)
+            raise
+
     def _download_file(self, file_):
         """Download the input file from S3."""
         input_file = f's3://{file_["bucket"]}/{file_["key"]}'
+
+        # Check if we need to assume a role for this bucket
+        role_arn = self._get_role_for_bucket(file_["bucket"])
+
         try:
+            if role_arn:
+                self.logger.info(f"Assuming role {role_arn} for bucket {file_['bucket']}")
+                credentials = self._assume_role(role_arn)
+
+                # Create a new S3 client with assumed role credentials
+                s3_client = boto3.client(
+                    's3',
+                    aws_access_key_id=credentials['aws_access_key_id'],
+                    aws_secret_access_key=credentials['aws_secret_access_key'],
+                    aws_session_token=credentials['aws_session_token']
+                )
+
+                # Download using the custom client
+                bucket = file_["bucket"]
+                key = file_["key"]
+                local_path = os.path.join(self.path, os.path.basename(key))
+
+                s3_client.download_file(bucket, key, local_path)
+                return local_path
+
             return s3.download(input_file, path=self.path)
+
         except botocore.exceptions.ClientError as ex:
             self.logger.error("Error downloading file from S3: {}".format(ex), exc_info=True)
             raise

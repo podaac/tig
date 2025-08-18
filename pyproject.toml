@@ -22,7 +22,7 @@ netCDF4 = "^1.6.5"
 xarray = "^2025.1.1"
 imageio = "^2.34.0"
 pygeogrids = "^0.5.0"
-cumulus-process = "^1.4.0"
+cumulus-process = { git = "https://github.com/nasa/cumulus-process-py.git", tag = "1.5.0" }
 requests = "^2.31.0"
 click = "^8.1.7"
 scipy = "^1.12.0"

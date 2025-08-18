@@ -730,26 +730,21 @@ files = [
 cumulus-message-adapter = ">=2.0.4,<2.1.0"
 
 [[package]]
-name = "cumulus_process"
+name = "cumulus-process"
 version = "1.5.0"
 description = "Library for creating Cumulus Process tasks in Python"
 optional = false
 python-versions = "*"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "cumulus_process-1.5.0.tar.gz", hash = "sha256:d1889b1befccd574116b0399bdc7afccbfb776597e3b9820b90606ed748cc9be"},
+]
 
 [package.dependencies]
 boto3 = ">=1.26.90,<1.27.0"
 cumulus-message-adapter-python = ">=2.3.0,<2.4.0"
 dicttoxml = ">=1.7.4,<1.8.0"
 python-json-logger = ">=0.1,<1.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/nasa/cumulus-process-py.git"
-reference = "1.5.0"
-resolved_reference = "95f9752080e75fa5c6c49e1d4c5a585f37ab3d5f"
 
 [[package]]
 name = "cycler"
@@ -2350,14 +2345,14 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.32.4"
+version = "2.32.5"
 description = "Python HTTP for Humans."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main", "dev"]
 files = [
-    {file = "requests-2.32.4-py3-none-any.whl", hash = "sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c"},
-    {file = "requests-2.32.4.tar.gz", hash = "sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422"},
+    {file = "requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6"},
+    {file = "requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf"},
 ]
 
 [package.dependencies]
@@ -3044,4 +3039,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <3.13"
-content-hash = "792afa2ad78c3b84aa486bb2b3a47acda97731b614b6fb399f22d301c8159eb1"
+content-hash = "e42c8b5270844341b02d36d0d002f8372ed947c7864f613eea6e425b8ee95d18"

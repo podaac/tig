@@ -6,7 +6,8 @@ FROM public.ecr.aws/lambda/python:3.10-arm64
 ARG SOURCE
 ARG DIST_PATH
 
-RUN yum -q -y install gcc
+# Install compilers needed for matplotlib (C + C++)
+RUN yum -q -y install gcc gcc-c++ make
 
 # Create function directory
 # RUN mkdir -p ${FUNCTION_DIR}

@@ -101,6 +101,13 @@ class ImageGenerator(Process):
         rmtree(self.path)
         clean_tmp()
 
+    def _get_s3_extra(self, upload=False):
+        """Helper to build the extra dict for S3 operations."""
+        extra = {"ACL": "bucket-owner-full-control"} if upload else {}
+        if self.config.get("requester_pay", False):
+            extra["RequestPayer"] = "requester"
+        return extra
+
     def download_file_from_s3(self, s3file, working_dir):
         """ Download s3 file to local
 
@@ -117,7 +124,8 @@ class ImageGenerator(Process):
             full path of the downloaded file
         """
         try:
-            return s3.download(s3file, working_dir)
+            extra = self._get_s3_extra()
+            return s3.download(s3file, working_dir, extra=extra)
         except botocore.exceptions.ClientError as ex:
             self.logger.error("Error downloading file %s: %s" % (s3file, working_dir), exc_info=True)
             raise ex
@@ -133,7 +141,8 @@ class ImageGenerator(Process):
             s3 string of file location
         """
         try:
-            return s3.upload(filename, uri, extra={"ACL": "bucket-owner-full-control"})
+            extra = self._get_s3_extra(upload=True)
+            return s3.upload(filename, uri, extra=extra)
         except botocore.exceptions.ClientError as ex:
             self.logger.error("Error uploading file %s: %s" % (os.path.basename(os.path.basename(filename)), str(ex)), exc_info=True)
             raise ex
@@ -370,7 +379,8 @@ class ImageGenerator(Process):
         """Download the input file from S3."""
         input_file = f's3://{file_["bucket"]}/{file_["key"]}'
         try:
-            return s3.download(input_file, path=self.path)
+            extra = self._get_s3_extra()
+            return s3.download(input_file, path=self.path, extra=extra)
         except botocore.exceptions.ClientError as ex:
             self.logger.error("Error downloading file from S3: {}".format(ex), exc_info=True)
             raise

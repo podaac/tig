@@ -8,9 +8,6 @@ RUN microdnf install -y gcc gcc-c++ make && \
     microdnf clean all && \
     rm -rf /var/cache/dnf
 
-# Copy distribution files
-COPY $DIST_PATH $DIST_PATH
-
 # Install dependencies in a single layer
 RUN pip3 install --no-cache-dir \
     awslambdaric \
@@ -18,8 +15,7 @@ RUN pip3 install --no-cache-dir \
     pip3 install --no-cache-dir --force \
     --index-url https://pypi.org/simple/ \
     --extra-index-url https://test.pypi.org/simple/ \
-    --target "${LAMBDA_TASK_ROOT}" ${SOURCE} && \
-    rm -rf $DIST_PATH
+    --target "${LAMBDA_TASK_ROOT}" ${SOURCE}
 
 ENTRYPOINT []
 CMD ["podaac.lambda_handler.lambda_handler.handler"]

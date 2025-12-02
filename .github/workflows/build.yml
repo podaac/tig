@@ -29,6 +29,13 @@ jobs:
       packages: write
       id-token: write
 
+    outputs:
+      new_version: ${{ steps.build-outputs.outputs.new_version }}
+      pyproject_name: ${{ steps.build-outputs.outputs.pyproject_name }}
+      target_env_uppercase: ${{ steps.build-outputs.outputs.target_env_uppercase }}
+      target_env_lowercase: ${{ steps.build-outputs.outputs.target_env_lowercase }}
+      source: ${{ steps.build-outputs.outputs.source }}
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -240,13 +247,76 @@ jobs:
           lowercase_value=$(echo "${original_env_value}" | tr '[:upper:]' '[:lower:]')
           echo "TARGET_ENV_LOWERCASE=${lowercase_value}" >> $GITHUB_ENV
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Set Build Source
+        id: set-source
+        run: |
+          # Use test PyPI package format (Dockerfile will find it via extra-index-url)
+          echo "SOURCE=${{ env.pyproject_name }}==${{ env.new_version }}" >> $GITHUB_ENV
+
+      - name: Set build outputs
+        id: build-outputs
+        run: |
+          echo "new_version=${{ env.new_version }}" >> $GITHUB_OUTPUT
+          echo "pyproject_name=${{ env.pyproject_name }}" >> $GITHUB_OUTPUT
+          echo "target_env_uppercase=${{ env.TARGET_ENV_UPPERCASE }}" >> $GITHUB_OUTPUT
+          echo "target_env_lowercase=${{ env.TARGET_ENV_LOWERCASE }}" >> $GITHUB_OUTPUT
+          echo "source=${{ env.SOURCE }}" >> $GITHUB_OUTPUT
+
+      - name: Upload terraform zip artifact
         if: |
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main'    ||
           startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat' 
+          github.event.head_commit.message == '/deploy uat'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-zip
+          path: tig-terraform-${{ env.new_version }}.zip
+          retention-days: 1
+
+  deploy:
+    name: Deploy Docker and Terraform
+    runs-on: ubuntu-24.04-arm
+    needs: build
+    if: |
+      github.ref == 'refs/heads/develop' ||
+      github.ref == 'refs/heads/main'    ||
+      startsWith(github.ref, 'refs/heads/release') ||
+      github.event.head_commit.message == '/deploy sit' ||
+      github.event.head_commit.message == '/deploy uat'
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download terraform zip
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-zip
+          path: .
+
+      - name: Set deployment variables from build outputs
+        run: |
+          echo "NEW_VERSION=${{ needs.build.outputs.new_version }}" >> $GITHUB_ENV
+          echo "PYPROJECT_NAME=${{ needs.build.outputs.pyproject_name }}" >> $GITHUB_ENV
+          echo "TARGET_ENV_UPPERCASE=${{ needs.build.outputs.target_env_uppercase }}" >> $GITHUB_ENV
+          echo "TARGET_ENV_LOWERCASE=${{ needs.build.outputs.target_env_lowercase }}" >> $GITHUB_ENV
+          echo "SOURCE=${{ needs.build.outputs.source }}" >> $GITHUB_ENV
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -254,29 +324,10 @@ jobs:
           flavor: |
             latest=${{ github.ref == 'refs/heads/main' }}
           tags: |
-            type=pep440,pattern={{version}},value=${{ env.new_version }}
+            type=pep440,pattern={{version}},value=${{ env.NEW_VERSION }}
             type=raw,value=${{ env.TARGET_ENV_LOWERCASE }}
 
-      - name: Set Build Source
-        id: set-source
-        run: |
-          # Default build source for standard branches
-          echo "SOURCE=${{ env.pyproject_name }}==${{ env.new_version }}" >> $GITHUB_ENV
-
-          if [[ "${{ contains(github.event.head_commit.message, '/deploy sit') || 
-                     contains(github.event.head_commit.message, '/deploy uat') }}" == "true" ]]; then
-            local_tig=$(find dist -type f -name "*.whl")
-            echo "SOURCE=${local_tig}" >> $GITHUB_ENV
-            echo "DIST_PATH=dist/" >> $GITHUB_ENV
-          fi
-
       - name: Build and Push Docker Image
-        if: |
-          github.ref == 'refs/heads/develop' ||
-          github.ref == 'refs/heads/main'    ||
-          startsWith(github.ref, 'refs/heads/release') ||
-          github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat' 
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -288,17 +339,23 @@ jobs:
           platforms: linux/arm64
           build-args: |
             SOURCE=${{ env.SOURCE }}
-            DIST_PATH=${{ env.DIST_PATH || '' }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache,mode=max
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.3
+
+      - name: Get Docker image tag
+        id: docker-tag
+        run: |
+          # Extract the first tag (version tag) from metadata output
+          DOCKER_IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_TAG=${DOCKER_IMAGE_TAG}" >> $GITHUB_OUTPUT
+
       - name: Deploy Terraform
-        if: |
-          github.ref == 'refs/heads/develop' ||
-          github.ref == 'refs/heads/main'    ||
-          startsWith(github.ref, 'refs/heads/release') ||
-          github.event.head_commit.message == '/deploy sit' ||
-          github.event.head_commit.message == '/deploy uat'
         working-directory: terraform_deploy/
         env:
           AWS_ACCESS_KEY_ID:       ${{ secrets[format('AWS_ACCESS_KEY_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
@@ -306,11 +363,11 @@ jobs:
           AWS_ACCOUNT_ID:          ${{ secrets[format('AWS_ACCOUNT_ID_SERVICES_{0}', env.TARGET_ENV_UPPERCASE)] }}
           AWS_DEFAULT_REGION:      us-west-2
 
-          TF_VAR_tig_docker_image: "ghcr.io/podaac/tig:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
+          TF_VAR_tig_docker_image: ${{ env.DOCKER_IMAGE_TAG }}
           TF_VAR_EARTH_DATA_LOGIN_CLIENT_ID: ${{ secrets[format('EARTH_DATA_LOGIN_CLIENT_ID_{0}', env.TARGET_ENV_UPPERCASE)] }}
           TF_VAR_EARTH_DATA_LOGIN_PASSWORD: ${{ secrets[format('EARTH_DATA_LOGIN_PASSWORD_{0}', env.TARGET_ENV_UPPERCASE)] }}
         run: |
-          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.new_version }}/tig-terraform-${{ env.new_version }}.zip "ghcr.io/podaac/tig:${{ env.DOCKER_METADATA_OUTPUT_VERSION }}"
+          python3 override.py https://github.com/podaac/tig/releases/download/${{ env.NEW_VERSION }}/tig-terraform-${{ env.NEW_VERSION }}.zip "${{ env.DOCKER_IMAGE_TAG }}"
           source bin/config.sh ${{ env.TARGET_ENV_LOWERCASE }}
-          terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.new_version }}" -out="tfplan"
+          terraform plan -var-file=tfvars/"${{ env.TARGET_ENV_LOWERCASE }}".tfvars -var="app_version=${{ env.NEW_VERSION }}" -out="tfplan"
           terraform apply -auto-approve tfplan > /dev/null

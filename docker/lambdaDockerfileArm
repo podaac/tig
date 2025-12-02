@@ -1,7 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.12-arm64
 
 ARG SOURCE
-ARG DIST_PATH
 
 # Combine commands to reduce layers and use --no-cache for microdnf
 RUN microdnf install -y gcc gcc-c++ make && \

@@ -186,15 +186,22 @@ jobs:
           startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
           github.event.head_commit.message == '/deploy uat'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
+        run: |
+          pip install twine
+          twine upload --repository testpypi dist/*
 
       - name: Publish to pypi.org
-        if: |
-          github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         id: pypi-publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          pip install twine
+          twine upload dist/*
 
       - name: Wait for package
         if: |

@@ -5,8 +5,9 @@ FROM public.ecr.aws/lambda/python:3.12-arm64
 ARG SOURCE
 ARG DIST_PATH
 
-# Amazon Linux 2023 uses dnf, not yum
-RUN dnf -qy install gcc gcc-c++ make && dnf clean all
+# Amazon Linux 2023 in Lambda images uses microdnf with limited packages
+# Install build dependencies
+RUN microdnf install -y gcc gcc-c++ make tar gzip && microdnf clean all
 
 # Install tig from artifactory
 COPY $DIST_PATH $DIST_PATH

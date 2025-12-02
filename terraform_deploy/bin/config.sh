@@ -16,4 +16,4 @@ export TF_INPUT=false  # https://www.terraform.io/cli/config/environment-variabl
 export TF_VAR_region="$REGION"
 export TF_VAR_stage="$VENUE"
 
-terraform init -reconfigure -backend-config="bucket=$BUCKET" -backend-config="region=$REGION"
+terraform init -reconfigure -backend-config="bucket=$BUCKET" -backend-config="region=$REGION" --upgrade

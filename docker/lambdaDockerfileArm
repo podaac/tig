@@ -1,27 +1,25 @@
-ARG FUNCTION_DIR="/function"
-
 FROM public.ecr.aws/lambda/python:3.12-arm64
 
 ARG SOURCE
 ARG DIST_PATH
 
-# Amazon Linux 2023 in Lambda images uses microdnf with limited packages
-# Install build dependencies
-RUN microdnf install -y gcc gcc-c++ make tar gzip && microdnf clean all
+# Combine commands to reduce layers and use --no-cache for microdnf
+RUN microdnf install -y gcc gcc-c++ make && \
+    microdnf clean all && \
+    rm -rf /var/cache/dnf
 
-# Install tig from artifactory
+# Copy distribution files
 COPY $DIST_PATH $DIST_PATH
 
-# Install Lambda Runtime Interface
-RUN pip3 install awslambdaric --target $LAMBDA_TASK_ROOT
-
-# Install your package
-RUN pip3 install --no-cache-dir --force \
+# Install dependencies in a single layer
+RUN pip3 install --no-cache-dir \
+    awslambdaric \
+    --target $LAMBDA_TASK_ROOT && \
+    pip3 install --no-cache-dir --force \
     --index-url https://pypi.org/simple/ \
     --extra-index-url https://test.pypi.org/simple/ \
-    --target "${LAMBDA_TASK_ROOT}" ${SOURCE}
-
-RUN rm -rf $DIST_PATH
+    --target "${LAMBDA_TASK_ROOT}" ${SOURCE} && \
+    rm -rf $DIST_PATH
 
 ENTRYPOINT []
 CMD ["podaac.lambda_handler.lambda_handler.handler"]

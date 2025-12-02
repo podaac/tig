@@ -22,7 +22,7 @@ env:
 jobs:
   build:
     name: Build, Test, and Publish
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
 
     permissions:
       contents: write
@@ -35,13 +35,13 @@ jobs:
           fetch-depth: 0  # Needed for proper versioning
       
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       
       - name: Setup Poetry
-        uses: abatilo/actions-poetry@v3
+        uses: abatilo/actions-poetry@v4
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
       
@@ -54,6 +54,12 @@ jobs:
         with:
           path: .venv
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -91,28 +97,26 @@ jobs:
           echo "pyproject_name=${pyproject_name}" >> $GITHUB_ENV
           poetry version ${new_version}
 
-      - name: Install Snyk CLI
-        run: |
-          curl -o snyk https://static.snyk.io/cli/latest/snyk-linux-arm64
-          chmod +x snyk
-          sudo mv snyk /usr/local/bin/
+      - name: Run Snyk as a blocking step
+        uses: snyk/actions/python@master
+        env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: >
+              --org=${{ secrets.SNYK_ORG_ID }}
+              --project-name=${{ github.repository }}
+              --severity-threshold=high
+              --fail-on=all
 
-      - name: Run Snyk test (blocking)
+      - name: Run Snyk on Python
+        uses: snyk/actions/python@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          snyk test \
-            --org=${{ secrets.SNYK_ORG_ID }} \
-            --project-name=${{ github.repository }} \
-            --severity-threshold=high \
-            --fail-on=all
-
-      - name: Run Snyk monitor (continuous monitoring)
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          snyk monitor \
-            --org=${{ secrets.SNYK_ORG_ID }} \
+        with:
+          command: monitor
+          args: >
+            --org=${{ secrets.SNYK_ORG_ID }}
             --project-name=${{ github.repository }}
   
       - name: Run Poetry
@@ -186,22 +190,15 @@ jobs:
           startsWith(github.ref, 'refs/heads/release') ||
           github.event.head_commit.message == '/deploy sit' ||
           github.event.head_commit.message == '/deploy uat'
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
-        run: |
-          pip install twine
-          twine upload --repository testpypi dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
 
       - name: Publish to pypi.org
-        if: github.ref == 'refs/heads/main'
+        if: |
+          github.ref == 'refs/heads/main'
         id: pypi-publish
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          pip install twine
-          twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
 
       - name: Wait for package
         if: |

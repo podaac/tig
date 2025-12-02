@@ -339,8 +339,6 @@ jobs:
           platforms: linux/arm64
           build-args: |
             SOURCE=${{ env.SOURCE }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}/cache:tig-cache,mode=max
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

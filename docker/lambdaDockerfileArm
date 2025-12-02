@@ -1,25 +1,24 @@
-#ARG FUNCTION_DIR="/function"
+ARG FUNCTION_DIR="/function"
 
 FROM public.ecr.aws/lambda/python:3.12-arm64
 
-# Include global arg in this stage of the build
 ARG SOURCE
 ARG DIST_PATH
 
-# Install compilers needed for matplotlib (C + C++)
-RUN yum -q -y install gcc gcc-c++ make
-
-# Create function directory
-# RUN mkdir -p ${FUNCTION_DIR}
-# WORKDIR ${FUNCTION_DIR}
+# Amazon Linux 2023 uses dnf, not yum
+RUN dnf -qy install gcc gcc-c++ make && dnf clean all
 
 # Install tig from artifactory
 COPY $DIST_PATH $DIST_PATH
 
-# install tig into working directory so we can call lambda
+# Install Lambda Runtime Interface
 RUN pip3 install awslambdaric --target $LAMBDA_TASK_ROOT
 
-RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target "${LAMBDA_TASK_ROOT}" $SOURCE
+# Install your package
+RUN pip3 install --no-cache-dir --force \
+    --index-url https://pypi.org/simple/ \
+    --extra-index-url https://test.pypi.org/simple/ \
+    --target "${LAMBDA_TASK_ROOT}" ${SOURCE}
 
 RUN rm -rf $DIST_PATH
 

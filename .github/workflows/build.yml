@@ -200,7 +200,9 @@ jobs:
         if: |
           github.ref == 'refs/heads/develop' ||
           github.ref == 'refs/heads/main' ||
-          startsWith(github.ref, 'refs/heads/release/')
+          startsWith(github.ref, 'refs/heads/release/') ||
+          github.event.head_commit.message == '/deploy sit' ||
+          github.event.head_commit.message == '/deploy uat'
         run: |
           pip install tenacity logging 
           python3 ${GITHUB_WORKSPACE}/.github/workflows/wait-for-pypi.py ${{env.pyproject_name}}[harmony]==${{ env.new_version }}

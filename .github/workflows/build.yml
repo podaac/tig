@@ -271,12 +271,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download terraform zip
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-zip
-          path: .
-
       - name: Set deployment variables from build outputs
         run: |
           echo "NEW_VERSION=${{ needs.build.outputs.new_version }}" >> $GITHUB_ENV

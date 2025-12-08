@@ -1,27 +1,20 @@
-#ARG FUNCTION_DIR="/function"
+FROM public.ecr.aws/lambda/python:3.12-arm64
 
-FROM public.ecr.aws/lambda/python:3.10-arm64
-
-# Include global arg in this stage of the build
 ARG SOURCE
-ARG DIST_PATH
 
-# Install compilers needed for matplotlib (C + C++)
-RUN yum -q -y install gcc gcc-c++ make
+# Combine commands to reduce layers and use --no-cache for microdnf
+RUN microdnf install -y gcc gcc-c++ make && \
+    microdnf clean all && \
+    rm -rf /var/cache/dnf
 
-# Create function directory
-# RUN mkdir -p ${FUNCTION_DIR}
-# WORKDIR ${FUNCTION_DIR}
-
-# Install tig from artifactory
-COPY $DIST_PATH $DIST_PATH
-
-# install tig into working directory so we can call lambda
-RUN pip3 install awslambdaric --target $LAMBDA_TASK_ROOT
-
-RUN pip3 install --no-cache-dir --force --index-url https://pypi.org/simple/ --extra-index-url https://test.pypi.org/simple/ --target "${LAMBDA_TASK_ROOT}" $SOURCE
-
-RUN rm -rf $DIST_PATH
+# Install dependencies in a single layer
+RUN pip3 install --no-cache-dir \
+    awslambdaric \
+    --target $LAMBDA_TASK_ROOT && \
+    pip3 install --no-cache-dir --force \
+    --index-url https://pypi.org/simple/ \
+    --extra-index-url https://test.pypi.org/simple/ \
+    --target "${LAMBDA_TASK_ROOT}" ${SOURCE}
 
 ENTRYPOINT []
 CMD ["podaac.lambda_handler.lambda_handler.handler"]

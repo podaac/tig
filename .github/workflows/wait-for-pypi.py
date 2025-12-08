@@ -3,16 +3,13 @@ import sys
 import tempfile
 import logging
 import subprocess
-
 import tenacity
-
+import time
 '''
 Sometimes the package published to PyPi is not immediately available for download from the index. This script
 simply repeatedly tries to download a specific version of a package from PyPI (or test.pypi) until it succeeds or
 a limit is exceeded.
 '''
-
-
 @tenacity.retry(
     wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
     retry=tenacity.retry_if_exception_type(subprocess.CalledProcessError),
@@ -20,14 +17,13 @@ a limit is exceeded.
     before_sleep=tenacity.before_sleep_log(logging.getLogger(__name__), logging.DEBUG)
 )
 def download_package(package):
+    time.sleep(20)  # Wait 20 seconds before first try
     subprocess.check_call([sys.executable, '-m',
                            'pip', '--isolated', '--no-cache-dir',
                            'download', '--no-deps', '-d', tempfile.gettempdir(), '--index-url',
                            'https://pypi.org/simple/',
                            '--extra-index-url', 'https://test.pypi.org/simple/', package
                            ])
-
-
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     package_spec = sys.argv[1]

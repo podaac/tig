@@ -15,8 +15,8 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10, <3.13"
-numpy = "^2.2.1"
+python = ">=3.12, <3.13"
+numpy = "^2.3.0"
 matplotlib = "^3.8.3"
 netCDF4 = "^1.6.5"
 xarray = "^2025.1.1"
@@ -28,11 +28,11 @@ click = "^8.1.7"
 scipy = "^1.12.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.0.1"
+pytest = "^9.0.0"
 flake8 = "^7.0.0"
-pytest-cov = "^6"
-pylint = "^3.0.3"
-Sphinx = "^8.1.3"
+pytest-cov = "^7.0.0"
+pylint = "^4.0.0"
+Sphinx = "^9.0.0"
 moto = "^5.0.26"
 mock = "^5.1.0"
 opencv-python = "^4.10.0.84"

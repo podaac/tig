@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+- [issue/72] (https://github.com/podaac/hitide/issues/72): empty granules for VIIRS_NPP-NAVO-L2P-v3.0 moved up code where we test lon lat for nans. 
+- [issue/78] (https://github.com/podaac/hitide/issues/78): error message for empty granules
+- [issue/87] (https://github.com/podaac/hitide/issues/87): output message from cli call on input used to call tig.
 ### Security
 
 

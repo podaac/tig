@@ -16,10 +16,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.12, <3.13"
-numpy = "^2.3.0"
+numpy = "^2.4.2"
 matplotlib = "^3.8.3"
 netCDF4 = "^1.6.5"
-xarray = "^2025.1.1"
+xarray = "^2026.1.0"
 imageio = "^2.34.0"
 pygeogrids = "^0.5.0"
 cumulus-process = "^1.5.0"
@@ -35,7 +35,7 @@ pylint = "^4.0.0"
 Sphinx = "^9.0.0"
 moto = "^5.0.26"
 mock = "^5.1.0"
-opencv-python = "^4.10.0.84"
+opencv-python-headless = "^4.11.0.0"
 scikit-image = "^0.25.0"
 
 [tool.poetry.scripts]

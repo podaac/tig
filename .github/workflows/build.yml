@@ -37,7 +37,7 @@ jobs:
       source: ${{ steps.build-outputs.outputs.source }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Needed for proper versioning
       
@@ -269,7 +269,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

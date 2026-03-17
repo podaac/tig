@@ -309,6 +309,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/arm64
+          outputs: type=image
           build-args: |
             SOURCE=${{ env.SOURCE }}
 

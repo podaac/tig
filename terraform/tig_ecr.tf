@@ -14,6 +14,7 @@ locals {
   # For ECR, we usually want to push as a tag even if the source was a SHA.
   # If the source was a SHA, we'll strip 'sha256:' to use a clean string as a tag.
   safe_tag = replace(local.image_version, "sha256:", "")
+  ecr_image_tag = replace(local.image_version, "sha256:", "")
 }
 
 resource "aws_ecr_repository" "lambda-image-repo" {

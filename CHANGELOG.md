@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update to python 3.12
 - Update github actions build to use arm ubuntu to build images
+- Update poetry version 2.3.2
 ### Deprecated
 ### Removed
 ### Fixed

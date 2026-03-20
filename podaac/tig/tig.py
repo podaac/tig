@@ -434,6 +434,9 @@ class TIG():
 
         lon_array, lat_array = self.get_lon_lat(param_group=group)
 
+        if self.are_all_lon_lat_invalid(lon_array, lat_array):
+            raise Exception("Can't generate images for empty granule")
+
         # Get Bounds of the dataset
         eastern = lon_array.max()
         western = lon_array.min()
@@ -456,9 +459,6 @@ class TIG():
         height_deg = region[1] - region[0]
         width_deg = region[3] - region[2]
         self.region = Region(region)
-
-        if self.are_all_lon_lat_invalid(lon_array, lat_array):
-            raise Exception("Can't generate images for empty granule")
 
         self.rows, self.cols = max(1, int(height_deg * self.ppd)), max(1, int(width_deg * self.ppd))
 

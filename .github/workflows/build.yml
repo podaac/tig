@@ -37,7 +37,7 @@ jobs:
       source: ${{ steps.build-outputs.outputs.source }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Needed for proper versioning
       

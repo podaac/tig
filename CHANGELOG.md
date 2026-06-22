@@ -60,7 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
-  - [issue/79](https://github.com/podaac/tig/issues/79): Fix calculating how big the image resolution is, possibly size is 0 so make sure its at least 1
+- [issue/79](https://github.com/podaac/tig/issues/79): Fix calculating how big the image resolution is, possibly size is 0 so make sure its at least 1
 ### Security
 
 

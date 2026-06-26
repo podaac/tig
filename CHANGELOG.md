@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.16.0]
+
+### Added
+### Changed
+- [issue/116](https://github.com/podaac/tig/issues/116): Poetry update python libraries for cumulus consolidation.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 
 ## [0.15.0]
 

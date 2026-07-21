@@ -13,6 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.16.0]
+
+### Added
+### Changed
+- [issue/116](https://github.com/podaac/tig/issues/116): Poetry update python libraries for cumulus consolidation.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 
 ## [0.15.0]
 
@@ -24,9 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
-- [issue/72] (https://github.com/podaac/hitide/issues/72): empty granules for VIIRS_NPP-NAVO-L2P-v3.0 moved up code where we test lon lat for nans. 
-- [issue/78] (https://github.com/podaac/hitide/issues/78): error message for empty granules
-- [issue/87] (https://github.com/podaac/hitide/issues/87): output message from cli call on input used to call tig.
+- [issue/72](https://github.com/podaac/tig/issues/72): empty granules for VIIRS_NPP-NAVO-L2P-v3.0 moved up code where we test lon lat for nans. 
+- [issue/78](https://github.com/podaac/tig/issues/78): error message for empty granules
+- [issue/87](https://github.com/podaac/tig/issues/87): output message from cli call on input used to call tig.
 ### Security
 
 
@@ -59,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
-  - [issue/79] (https://github.com/podaac/hitide/issues/79): Fix calculating how big the image resolution is, possibly size is 0 so make sure its at least 1
+- [issue/79](https://github.com/podaac/tig/issues/79): Fix calculating how big the image resolution is, possibly size is 0 so make sure its at least 1
 ### Security
 
 
@@ -138,7 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ** Add image uploading **
   - update tig to upload tig image to ecr
 - ** Add palette support to generating configuration **
-  - [issue/44] (https://github.com/podaac/hitide/issues/44): Add support to palette, ppd, fill_missing in csv in generating configuration
+  - [issue/44](https://github.com/podaac/tig/issues/44): Add support to palette, ppd, fill_missing in csv in generating configuration
 - ** Fix swot 2.0 alignment issue **
   - Added way to use global grid for region if it is in hitide configurations
 ### Changed
@@ -156,9 +166,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ** Add Hitide Generate Configuration **
   - [issue/26](https://github.com/podaac/tig/issues/26): Added cli command to generate hitide configurations for tig/forge
 - ** Added in swot expert image generation **
-  - [issue/18] (https://github.com/podaac/hitide/issues/18): Added in code to generate ssha_karin_2 in swot expert
+  - [issue/18](https://github.com/podaac/hitide/issues/18): Added in code to generate ssha_karin_2 in swot expert
 - ** Upgrade to support Cumulus 16 **
-  - [issue/29] (https://github.com/podaac/hitide/issues/29): Upgrade to support cumulus 16
+  - [issue/29](https://github.com/podaac/tig/issues/29): Upgrade to support cumulus 16
 ### Changed
 ### Deprecated
 ### Removed

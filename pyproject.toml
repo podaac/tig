@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "podaac-thumbnail-generator"
-version = "0.17.0rc3"
+version = "0.17.0rc4"
 
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]

@@ -47,10 +47,8 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       
-      - name: Setup Poetry
-        uses: abatilo/actions-poetry@v4
-        with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+      - name: Install Poetry
+        run: pipx install poetry==$POETRY_VERSION --python "$(which python)"
       
       - name: Configure Poetry
         run: |

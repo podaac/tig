@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "podaac-thumbnail-generator"
-version = "0.16.0"
+version = "0.17.0rc4"
+
 description = "Tool for Image Generation (TIG)"
 authors = ["podaac-tva <podaac-tva@jpl.nasa.gov>"]
 license = "Apache-2.0"
@@ -35,8 +36,8 @@ pylint = "^4.0.0"
 Sphinx = "^9.0.0"
 moto = "^5.0.26"
 mock = "^5.1.0"
-opencv-python-headless = "^4.11.0.0"
-scikit-image = "^0.25.0"
+opencv-python-headless = "^5.0.0.0"
+scikit-image = "^0.26.0"
 
 [tool.poetry.scripts]
 tig = 'podaac.tig.cli:main'
